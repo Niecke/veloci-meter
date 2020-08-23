@@ -2,7 +2,7 @@
     "rules": [
         {
             "name": "first rule",
-            "pattern": "Undelivered Mail Returned to Sender",
+            "pattern": "Service-Mail",
             "timeframe": 10,
             "warning": 1,
             "critical": 5
