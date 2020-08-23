@@ -1,0 +1,24 @@
+{
+    "rules": [
+        {
+            "name": "first rule",
+            "pattern": "Undelivered Mail Returned to Sender",
+            "timeframe": 10,
+            "warning": 1,
+            "critical": 5
+        },
+        {
+            "name": "another rule",
+            "pattern": "Test",
+            "timeframe": 10,
+            "warning": 3,
+            "critical": 1
+        },
+        {
+            "name": "positive rule",
+            "pattern": "Hello",
+            "timeframe": 3600,
+            "ok": 1
+        }
+    ]
+}
