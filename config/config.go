@@ -3,8 +3,9 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"os"
+
+	l "github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -14,6 +15,7 @@ type Config struct {
 	BatchSize     int    `json:"BatchSize"`
 	FetchInterval int    `json:"FetchInterval"`
 	CheckInterval int    `json:"CheckInterval"`
+	LogLevel      string `json:"LogLevel"`
 
 	Icinga Icinga `json:"Icinga"`
 	Redis  Redis  `json:"Redis"`
@@ -43,11 +45,11 @@ type Mail struct {
 func LoadConfig() (c *Config) {
 	//##### CONFIG #####
 	var config Config
-	configFile, err := os.Open("config.json")
+	configFile, err := os.Open("/opt/veloci-meter/config.json")
 	if err != nil {
-		log.Fatal(err)
+		l.Fatal(err)
 	}
-	log.Println("Successfully Opened config.json")
+	l.Debugln("Successfully Opened config.json")
 	defer configFile.Close()
 
 	byteValue, _ := ioutil.ReadAll(configFile)
@@ -55,6 +57,6 @@ func LoadConfig() (c *Config) {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'config' which we defined above
 	json.Unmarshal(byteValue, &config)
-	log.Println("Successfully loaded the config.")
+	l.Infoln("Successfully loaded the config from /opt/veloci-meter/config.json")
 	return &config
 }

@@ -2,11 +2,11 @@ package mail
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/emersion/go-imap"
 	move "github.com/emersion/go-imap-move"
 	"github.com/emersion/go-imap/client"
+	l "github.com/sirupsen/logrus"
 	"niecke-it.de/veloci-meter/config"
 )
 
@@ -16,17 +16,17 @@ type IMAPClient struct {
 }
 
 func NewIMAPClient(conf *config.Mail) *IMAPClient {
-	log.Println("Connecting to server...")
+	l.Debugln("Connecting to mail server...")
 	// Connect to server
 	c, err := client.DialTLS(conf.URI, nil)
 	if err != nil {
-		log.Fatal(err)
+		l.Fatal(err)
 	}
 	i := IMAPClient{
 		c,
 		move.NewClient(c),
 	}
-	log.Println("Connected")
+	l.Debugln("Connected to mail server.")
 
 	return &i
 }
@@ -36,24 +36,24 @@ func (c *IMAPClient) MarkAsSeen(seqSet *imap.SeqSet) {
 		item := imap.FormatFlagsOp(imap.AddFlags, true)
 		flags := []interface{}{imap.SeenFlag}
 		if err := c.Store(seqSet, item, flags, nil); err != nil {
-			log.Println("IMAP Message Flag Update Failed")
-			log.Fatal(err)
+			l.Infoln("IMAP Message Flag Update Failed")
+			l.Fatal(err)
 		}
-		log.Println("Mails flagged as seen: " + fmt.Sprint(seqSet))
+		l.Debugln("Mails flagged as seen: " + fmt.Sprint(seqSet))
 	} else {
-		log.Println("No mails to flagg as seen.")
+		l.Debugln("No mails to flag as seen.")
 	}
 }
 
 func (c *IMAPClient) MoveToTODO(seqSet *imap.SeqSet) {
 	if seqSet.Empty() != true {
 		if err := c.MoveWithFallback(seqSet, "ToDo"); err != nil {
-			log.Println("IMAP Message copy failed!")
-			log.Fatal(err)
+			l.Infoln("IMAP Message copy failed!")
+			l.Fatal(err)
 		}
-		log.Println("Mails moved: " + fmt.Sprint(seqSet))
+		l.Debugln("Mails moved: " + fmt.Sprint(seqSet))
 	} else {
-		log.Println("No mails moved.")
+		l.Debugln("No mails moved.")
 	}
 }
 
@@ -62,7 +62,7 @@ func (c *IMAPClient) SearchUnseen() []uint32 {
 	criteria.WithoutFlags = []string{imap.SeenFlag}
 	ids, err := c.Search(criteria)
 	if err != nil {
-		log.Fatal(err)
+		l.Fatal(err)
 	}
 	return ids
 }

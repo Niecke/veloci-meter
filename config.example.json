@@ -7,6 +7,7 @@
     },
     "FetchInterval": 10,
     "CheckInterval": 10,
+    "LogLevel": "INFO",
     "Icinga": {
         "Endpoint": "https://localhost:5665/v1/actions/process-check-result",
         "User": "root",

@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+
+	l "github.com/sirupsen/logrus"
 )
 
 type Rules struct {
@@ -31,11 +32,10 @@ func (r *Rule) ToString() string {
 
 func LoadRules() (r *Rules) {
 	// Open our jsonFile
-	jsonFile, err := os.Open("rules.json")
+	jsonFile, err := os.Open("/opt/veloci-meter/rules.json")
 	if err != nil {
-		log.Fatal(err)
+		l.Fatal(err)
 	}
-	log.Println("Successfully Opened rules.json")
 	defer jsonFile.Close()
 
 	// read our opened jsonFile as a byte array.
@@ -47,5 +47,6 @@ func LoadRules() (r *Rules) {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'rules' which we defined above
 	json.Unmarshal(byteValue, &rules)
+	l.Infoln("Successfully loaded the rules from /opt/veloci-meter/rules.json")
 	return &rules
 }

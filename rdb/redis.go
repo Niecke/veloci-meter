@@ -4,21 +4,21 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/emersion/go-imap"
 	"github.com/go-redis/redis"
+	l "github.com/sirupsen/logrus"
 	"niecke-it.de/veloci-meter/config"
 )
 
-type rdb struct {
+type RDBClient struct {
 	client *redis.Client
 }
 
-func NewRDB(c *config.Redis) *rdb {
-	log.Println("Connect to redis...")
-	r := rdb{
+func NewRDB(c *config.Redis) *RDBClient {
+	l.Debugln("Connect to redis...")
+	r := RDBClient{
 		client: redis.NewClient(&redis.Options{
 			Addr:       c.URI,
 			MaxRetries: 3,
@@ -27,9 +27,9 @@ func NewRDB(c *config.Redis) *rdb {
 		})}
 	// Test redis
 	if _, err := r.client.Ping().Result(); err != nil {
-		log.Fatal(err)
+		l.Fatal(err)
 	}
-	log.Println("Connection successful.")
+	l.Debugln("Connection successful.")
 	return &r
 }
 
@@ -39,17 +39,17 @@ func buildHash(subject string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (r *rdb) StoreMail(msg *imap.Message, duration int) {
+func (r *RDBClient) StoreMail(msg *imap.Message, duration int) {
 	sha1_hash := buildHash(msg.Envelope.Subject)
 	r.client.Set(sha1_hash+":"+msg.Envelope.MessageId, msg.Envelope.MessageId, time.Duration(duration)*time.Second)
-	log.Println("Stored " + sha1_hash + ":" + msg.Envelope.MessageId + " for " + fmt.Sprint(time.Duration(duration)*time.Second))
+	l.Debugln("Stored " + sha1_hash + ":" + msg.Envelope.MessageId + " for " + fmt.Sprint(time.Duration(duration)*time.Second))
 }
 
-func (r *rdb) CountMail(pattern string) int64 {
+func (r *RDBClient) CountMail(pattern string) int64 {
 	sha1_hash := buildHash(pattern)
 	v, err := r.client.Eval("return #redis.pcall('keys', '"+sha1_hash+":*')", nil).Result()
 	if err != nil {
-		log.Fatal(err)
+		l.Fatal(err)
 	}
 	return v.(int64)
 }
