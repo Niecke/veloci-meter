@@ -4,10 +4,15 @@
 
 * [ ] refactor the main.go
 * [ ] single check mode
-* [ ] enhance logging (add debug log)
-* [ ] run programm as service
+* [x] enhance logging (add debug log)
+* [x] run programm as service
 * [ ] warn if icinga checks are not defined
 * [ ] export icinga check configuration when starting
+
+## Installation
+
+The binary `veloci-meter` and both json files `rules.json` and `config.json` need to be placed in `/opt/veloci-meter`.
+For running the veloci-meter as a systemd service the `veloci-meter.service` needs to be place in `/etc/systemd/system/`
 
 ## Rules
 

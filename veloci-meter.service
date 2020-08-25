@@ -1,0 +1,10 @@
+[Unit]
+Description=Veloci-Meter
+
+[Service]
+Restart=always
+Type=simple
+ExecStart=/opt/veloci-meter/veloci-meter
+
+[Install]
+WantedBy=multi-user.target
