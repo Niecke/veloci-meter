@@ -3,6 +3,7 @@ package icinga
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -40,6 +41,21 @@ func SendResults(c *config.Config, name string, pattern string, exitCode int) {
 		l.Fatal(err)
 	}
 	l.Debugf("%s\n", string(body))
+
+	// TODO print Warning when result is empty
+	var r map[string]interface{}
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		l.Errorf("[%v] Error while decoding icinga result. The http response body was %v", err, body)
+	} else {
+		results := r["results"].([]interface{})
+		if len(results) == 0 {
+			l.Warnf("No Check definition found! Name: '%v' | Pattern: '%v'", name, pattern)
+		} else {
+			l.Debugf("Send data for check %v", results[0])
+		}
+	}
+
 }
 
 func PostForm(c *http.Client, url string, user string, password string, data []byte) (resp *http.Response, err error) {

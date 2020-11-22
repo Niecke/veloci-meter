@@ -1,4 +1,8 @@
 {
+    "global": {
+        "5": 10,
+        "60": 50
+    },
     "rules": [
         {
             "name": "first rule",

@@ -68,7 +68,7 @@ func (r *RDBClient) IncreaseGlobalCounter(timeframe int) {
 	redis_key := calculateGlobalKey(timestamp, timeframe)
 	err := r.client.Incr(redis_key)
 	if err != nil {
-		l.Errorf("[%v] There was an error incrementing gloabl counter in redis. Redis key was %v.", err, redis_key)
+		l.Debug("Redis Command executed: [%v]", err, redis_key)
 	}
 }
 

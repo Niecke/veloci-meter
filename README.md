@@ -51,6 +51,21 @@ For this rule you can also define `"alert":"critical"` so the rule won't be warn
 }
 ```
 
+### Global Rules
+
+There are also rules which apply to all mails which do not map any pattern.
+The limits for these mails must be defined within the `rules.json` file as follow:
+```
+{
+    "global": {
+        "5": 10,
+        "60": 50
+    },
+    "rules": [...]
+}
+```
+There is only one rule for the timeframe of 5 minutes and one for 60 minutes. If the defined limits are reached a warning will be send to icinga.
+
 ## Config
 
 - `Mail.BatchSize` The number of mails processed within one iteration.
