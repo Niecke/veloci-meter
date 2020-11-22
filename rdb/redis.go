@@ -4,6 +4,8 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"strconv"
 	"time"
 
 	"github.com/emersion/go-imap"
@@ -52,4 +54,40 @@ func (r *RDBClient) CountMail(pattern string) int64 {
 		l.Fatal(err)
 	}
 	return v.(int64)
+}
+
+func calculateGlobalKey(timestamp int, timeframe int) string {
+	remainder := math.Mod(float64(timestamp), float64(timeframe*60))
+	key_part := timestamp - int(remainder)
+	return "global:" + fmt.Sprint(timeframe) + ":" + fmt.Sprint(key_part)
+}
+
+// timefram in minutes
+func (r *RDBClient) IncreaseGlobalCounter(timeframe int) {
+	timestamp := int(time.Now().Unix())
+	redis_key := calculateGlobalKey(timestamp, timeframe)
+	err := r.client.Incr(redis_key)
+	if err != nil {
+		l.Errorf("[%v] There was an error incrementing gloabl counter in redis. Redis key was %v.", err, redis_key)
+	}
+}
+
+func (r *RDBClient) GetGlobalCounter(timeframe int) int {
+	timestamp := int(time.Now().Unix())
+	redis_key := calculateGlobalKey(timestamp, timeframe)
+	val, err := r.client.Get(redis_key).Result()
+
+	if err != nil {
+		if err == redis.Nil {
+			return 0
+		}
+		l.Errorf("[%v] There was an error while getting global counter from redis. Redis key was %v", err, redis_key)
+	}
+
+	c, err := strconv.Atoi(val)
+	if err != nil {
+		l.Errorf("[%v] There parsing global counter value from redis. value was %v", err, val)
+	}
+
+	return c
 }

@@ -42,10 +42,10 @@ type Mail struct {
 	BatchSize int    `json:"BatchSize"`
 }
 
-func LoadConfig() (c *Config) {
+func LoadConfig(path string) (c *Config) {
 	//##### CONFIG #####
 	var config Config
-	configFile, err := os.Open("/opt/veloci-meter/config.json")
+	configFile, err := os.Open(path)
 	if err != nil {
 		l.Fatal(err)
 	}
@@ -57,6 +57,6 @@ func LoadConfig() (c *Config) {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'config' which we defined above
 	json.Unmarshal(byteValue, &config)
-	l.Infoln("Successfully loaded the config from /opt/veloci-meter/config.json")
+	l.Infof("Successfully loaded the config from %v", path)
 	return &config
 }

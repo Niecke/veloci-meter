@@ -10,7 +10,13 @@ import (
 )
 
 type Rules struct {
-	Rules []Rule `json:"rules"`
+	Global Global `json:"global"`
+	Rules  []Rule `json:"rules"`
+}
+
+type Global struct {
+	FiveMinutes  int `json:"5"`
+	SixtyMinutes int `json:"60"`
 }
 
 type Rule struct {

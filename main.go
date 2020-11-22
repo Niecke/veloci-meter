@@ -28,6 +28,8 @@ import (
 )
 
 var logger service.Logger
+var conf_path string
+var log_path string
 
 // Program structures.
 //  Define Start and Stop methods.
@@ -50,9 +52,9 @@ func (p *program) Start(s service.Service) error {
 
 func (p *program) run() error {
 	//##### CONFIG #####
-	config := config.LoadConfig()
+	config := config.LoadConfig(conf_path)
 
-	f, err := os.OpenFile("/var/log/veloci-meter.log",
+	f, err := os.OpenFile(log_path,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -118,6 +120,14 @@ func (p *program) Stop(s service.Service) error {
 }
 
 func main() {
+	if len(os.Args) == 3 {
+		conf_path = os.Args[1]
+		log_path = os.Args[1]
+	} else {
+		conf_path = "/opt/veloci-meter/config.json"
+		log_path = "/var/log/veloci-meter.log"
+	}
+
 	svcFlag := flag.String("service", "", "Control the system service.")
 	flag.Parse()
 
@@ -222,6 +232,12 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.RDBClient) {
 			}
 			if found == false {
 				l.Debugln("Subject '" + msg.Envelope.Subject + "' does not match any pattern.")
+				// increment the gloabl counters for unkown mails
+				r.IncreaseGlobalCounter(5)
+				l.Debugf("Increment gloabl counter %v minutes by 1.", 5)
+
+				r.IncreaseGlobalCounter(60)
+				l.Debugf("Increment gloabl counter %v minutes by 1.", 60)
 				unknown.AddNum(msg.SeqNum)
 			}
 		}

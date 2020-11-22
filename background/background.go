@@ -64,6 +64,26 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 			}
 		}
 
+		// check global counter 5 minutes
+		c5 := r.GetGlobalCounter(5)
+		// counter is above the defined limit => send icinga warning
+		if c5 > rules.Global.FiveMinutes {
+			icinga.SendResults(config, "Global 5m", "Global 5m", 1)
+		} else {
+			icinga.SendResults(config, "Global 5m", "Global 5m", 0)
+		}
+		l.Debugf("Gloabl counter %v minutes was at %v with limit at %v.", 5, c5, rules.Global.FiveMinutes)
+
+		// check global counter 60 minutes
+		c60 := r.GetGlobalCounter(60)
+		// counter is above the defined limit => send icinga warning
+		if c5 > rules.Global.FiveMinutes {
+			icinga.SendResults(config, "Global 60m", "Global 60m", 1)
+		} else {
+			icinga.SendResults(config, "Global 60m", "Global 60m", 0)
+		}
+		l.Debugf("Gloabl counter %v minutes was at %v with limit at %v.", 60, c60, rules.Global.SixtyMinutes)
+
 		l.Infof("Rule Status: OK:%v | WARNING:%v | CRITICAL:%v - Next run in %d seconds.", ok_fired, warning_fired, critical_fired, config.CheckInterval)
 		time.Sleep(time.Duration(config.CheckInterval) * time.Second)
 	}
