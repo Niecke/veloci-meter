@@ -3,7 +3,7 @@
 ## Missing Features
 
 * [ ] refactor the main.go
-* [ ] log in json
+* [x] log in json
 * [ ] single check mode
 * [x] enhance logging (add debug log)
 * [x] run programm as service
