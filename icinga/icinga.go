@@ -13,7 +13,7 @@ import (
 	"niecke-it.de/veloci-meter/config"
 )
 
-func SendResults(c *config.Config, name string, pattern string, exitCode int) {
+func SendResults(c *config.Config, name string, pattern string, exitCode int, count int64) {
 	l.Debugf("Sending results: name=%v | pattern=%v | exitCode=%v", name, pattern, exitCode)
 	// TODO move insecure ssl to config
 	tr := &http.Transport{
@@ -30,7 +30,7 @@ func SendResults(c *config.Config, name string, pattern string, exitCode int) {
 	} else if exitCode == 2 {
 		e = "CRITICAL"
 	}
-	var jsonStr = []byte(fmt.Sprintf(`{"type": "Service", "filter": "host.name==\"%v\" && service.name==\"%v\"", "exit_status": %d, "plugin_output": "[%v] %v"}`, c.Icinga.Hostname, name, exitCode, e, pattern))
+	var jsonStr = []byte(fmt.Sprintf(`{"type": "Service", "filter": "host.name==\"%v\" && service.name==\"%v\"", "exit_status": %d, "plugin_output": "[%v] Pattern: '%v'", "performance_data": [ "count=%d" ]}`, c.Icinga.Hostname, name, exitCode, e, pattern, count))
 	resp, err := PostForm(netClient, c.Icinga.Endpoint, c.Icinga.User, c.Icinga.Password, jsonStr)
 	if err != nil {
 		l.Fatal(err)

@@ -30,16 +30,16 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 				if actCount < rule.Ok {
 					if rule.Alert == "critical" {
 						//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
-						icinga.SendResults(config, rule.Name, rule.Pattern, 2)
+						icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
 						critical_fired += 1
 					} else {
 						//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
-						icinga.SendResults(config, rule.Name, rule.Pattern, 1)
+						icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
 						warning_fired += 1
 					}
 				} else {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "ok")
-					icinga.SendResults(config, rule.Name, rule.Pattern, 0)
+					icinga.SendResults(config, rule.Name, rule.Pattern, 0, actCount)
 					ok_fired += 1
 				}
 			} else {
@@ -47,17 +47,17 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 				// the alert will be set again in each iteration
 				if actCount > rule.Critical {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
-					icinga.SendResults(config, rule.Name, rule.Pattern, 2)
+					icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
 					l.Debugln("Rule " + fmt.Sprint(i) + " is CRITICAL: " + rules.Rules[i].ToString())
 					critical_fired += 1
 				} else if actCount > rule.Warning {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
-					icinga.SendResults(config, rule.Name, rule.Pattern, 1)
+					icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
 					l.Debugln("Rule " + fmt.Sprint(i) + " is WARNING: " + rules.Rules[i].ToString())
 					warning_fired += 1
 				} else {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "ok")
-					icinga.SendResults(config, rule.Name, "Everythin is fine.", 0)
+					icinga.SendResults(config, rule.Name, rule.Pattern, 0, actCount)
 					l.Debugln("Rule " + fmt.Sprint(i) + " is OK: " + rules.Rules[i].ToString())
 					ok_fired += 1
 				}
@@ -68,10 +68,10 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		c5 := r.GetGlobalCounter(5)
 		// counter is above the defined limit => send icinga warning
 		if c5 > rules.Global.FiveMinutes {
-			icinga.SendResults(config, "Global 5m", "Global 5m", 1)
+			icinga.SendResults(config, "Global 5m", "Global 5m", 1, int64(c5))
 			l.Debugln("Global Rule 5m is WARNING")
 		} else {
-			icinga.SendResults(config, "Global 5m", "Global 5m", 0)
+			icinga.SendResults(config, "Global 5m", "Global 5m", 0, int64(c5))
 			l.Debugln("Global Rule 5m is OK")
 		}
 		l.Debugf("Gloabl counter %v minutes was at %v with limit at %v.", 5, c5, rules.Global.FiveMinutes)
@@ -80,10 +80,10 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		c60 := r.GetGlobalCounter(60)
 		// counter is above the defined limit => send icinga warning
 		if c5 > rules.Global.FiveMinutes {
-			icinga.SendResults(config, "Global 60m", "Global 60m", 1)
+			icinga.SendResults(config, "Global 60m", "Global 60m", 1, int64(c60))
 			l.Debugln("Global Rule 60m is WARNING")
 		} else {
-			icinga.SendResults(config, "Global 60m", "Global 60m", 0)
+			icinga.SendResults(config, "Global 60m", "Global 60m", 0, int64(c60))
 			l.Debugln("Global Rule 60m is OK")
 		}
 		l.Debugf("Gloabl counter %v minutes was at %v with limit at %v.", 60, c60, rules.Global.SixtyMinutes)
