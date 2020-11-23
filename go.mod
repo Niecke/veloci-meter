@@ -9,6 +9,7 @@ require (
 	github.com/go-redis/redis v6.15.8+incompatible
 	github.com/go-redis/redis/v8 v8.0.0-beta.7 // indirect
 	github.com/kardianos/service v1.1.0
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/sirupsen/logrus v1.6.0
 
 )

@@ -14,11 +14,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/emersion/go-imap"
 	"github.com/kardianos/service"
+	"github.com/robfig/cron/v3"
 	l "github.com/sirupsen/logrus"
 	"niecke-it.de/veloci-meter/background"
 	"niecke-it.de/veloci-meter/config"
@@ -30,6 +32,8 @@ import (
 var logger service.Logger
 var conf_path string
 var log_path string
+var conf config.Config
+var cron_job cron.Cron
 
 // Program structures.
 //  Define Start and Stop methods.
@@ -52,7 +56,7 @@ func (p *program) Start(s service.Service) error {
 
 func (p *program) run() error {
 	//##### CONFIG #####
-	config := config.LoadConfig(conf_path)
+	conf = *config.LoadConfig(conf_path)
 
 	f, err := os.OpenFile(log_path,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -61,10 +65,10 @@ func (p *program) run() error {
 	}
 	defer f.Close()
 
-	level, _ := l.ParseLevel(config.LogLevel)
+	level, _ := l.ParseLevel(conf.LogLevel)
 	l.SetLevel(level)
 	l.SetOutput(f)
-	if config.LogFormat == "JSON" {
+	if conf.LogFormat == "JSON" {
 		l.SetFormatter(&l.JSONFormatter{})
 	}
 
@@ -76,20 +80,26 @@ func (p *program) run() error {
 		l.Debugf("Rule " + fmt.Sprint(i) + ": " + rules.Rules[i].ToString())
 	}
 
+	//##### CRON #####
+	cron_job = *cron.New()
+	cron_job.AddFunc(conf.CleanUpSchedule, cleanUp)
+	l.Infof("Cron cleanup job started with '%v' schedule.", conf.CleanUpSchedule)
+	cron_job.Start()
+
 	//##### REDIS #####
-	r := rdb.NewRDB(&config.Redis)
+	r := rdb.NewRDB(&conf.Redis)
 
 	// start the background process which checks key counts in redis
 	//go background.CheckRedisLimits(config, rules)
-	go background.CheckForAlerts(config, rules)
+	go background.CheckForAlerts(&conf, rules)
 
 	//##### MAIL STUFF #####
 	l.Infof("Check that mailboxes are setup...")
-	imapClient := mail.NewIMAPClient(&config.Mail)
+	imapClient := mail.NewIMAPClient(&conf.Mail)
 
 	// Login
 	l.Infof("Loging into mail server...")
-	if err := imapClient.Login(config.Mail.User, config.Mail.Password); err != nil {
+	if err := imapClient.Login(conf.Mail.User, conf.Mail.Password); err != nil {
 		l.Fatal(err)
 	}
 
@@ -111,15 +121,60 @@ func (p *program) run() error {
 	}
 
 	for {
-		fetchMails(config, rules, r)
+		fetchMails(&conf, rules, r)
 	}
 }
 
 func (p *program) Stop(s service.Service) error {
 	// Any work in Stop should be quick, usually a few seconds at most.
-	log.Println("I'm Stopping!")
+
+	l.Infof("Cron cleanup job stopping...")
+	channel := cron_job.Stop().Done()
+	waitForChannelsToClose(channel)
+	l.Infof("Cron cleanup job stoped!")
+
+	l.Infof("Service stopping!")
 	close(p.exit)
 	return nil
+}
+
+func waitForChannelsToClose(ch <-chan struct{}) {
+	t := time.Now()
+	l.Debugf("%v for Cron job to stop", time.Since(t))
+}
+
+var GlobalPatterns = map[string]string{
+	"5m":  "global:5:",
+	"60m": "global:60:",
+}
+
+func cleanUp() {
+	l.Debug("Running clean up job.")
+	timestamp := int(time.Now().Unix())
+	deleted_key := 0
+	l.Debug("Connecting to redis...")
+	r := rdb.NewRDB(&conf.Redis)
+
+	for index, val := range GlobalPatterns {
+		l.Debug("Checking %v keys...", index)
+		keys := r.GetKeys(val + "*")
+		for _, key := range keys {
+			ts, err := strconv.Atoi(strings.Replace(key, val, "", -1))
+			if err != nil {
+				l.Errorf("[%v] There was an error converting %v to int.", err, key)
+			} else {
+				// if the key is older than 24 hours -> delete it
+				if timestamp-ts > 86400 {
+					redis_return := r.DeleteKey(key)
+					l.Infof("Redis return for deleting %v was %v", key, redis_return)
+					deleted_key++
+				}
+			}
+		}
+	}
+	end := int(time.Now().Unix())
+	duration := end - timestamp
+	l.Infof("Cleanup job is done. Deleted %v keys from redis in %v seconds.", deleted_key, duration)
 }
 
 func main() {

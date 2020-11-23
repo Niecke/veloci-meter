@@ -5,18 +5,20 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/robfig/cron/v3"
 	l "github.com/sirupsen/logrus"
 )
 
 type Config struct {
-	MailURI       string `json:"MailURI"`
-	MailUser      string `json:"MailUser"`
-	MailPassword  string `json:"MailPassword"`
-	BatchSize     int    `json:"BatchSize"`
-	FetchInterval int    `json:"FetchInterval"`
-	CheckInterval int    `json:"CheckInterval"`
-	LogLevel      string `json:"LogLevel"`
-	LogFormat     string `json:"LogFormat"`
+	MailURI         string `json:"MailURI"`
+	MailUser        string `json:"MailUser"`
+	MailPassword    string `json:"MailPassword"`
+	BatchSize       int    `json:"BatchSize"`
+	FetchInterval   int    `json:"FetchInterval"`
+	CheckInterval   int    `json:"CheckInterval"`
+	LogLevel        string `json:"LogLevel"`
+	LogFormat       string `json:"LogFormat"`
+	CleanUpSchedule string `json:"CleanUpSchedule"`
 
 	Icinga Icinga `json:"Icinga"`
 	Redis  Redis  `json:"Redis"`
@@ -80,6 +82,14 @@ func LoadConfig(path string) (c *Config) {
 	if !LogFormats[config.LogFormat] {
 		l.Errorf("Log format %v not supported. Falling back to PLAIN.", config.LogFormat)
 		config.LogFormat = "PLAIN"
+	}
+
+	p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+	_, err = p.Parse(config.CleanUpSchedule)
+
+	if err != nil {
+		l.Errorf("[%v] Schedule '%v' for CleanUpSchedule not supported. Falling back to '0 * * * *'", err, config.CleanUpSchedule)
+		config.CleanUpSchedule = "0 * * * *"
 	}
 
 	l.Infof("Successfully loaded the config from %v", path)

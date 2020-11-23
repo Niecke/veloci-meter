@@ -95,3 +95,23 @@ func (r *RDBClient) GetGlobalCounter(timeframe int) int {
 
 	return c
 }
+
+func (r *RDBClient) GetKeys(pattern string) []string {
+	val, err := r.client.Keys(pattern).Result()
+
+	if err != nil {
+		l.Errorf("[%v] There was an error while getting keys from redis. Key pattern was %v", err, pattern)
+	}
+
+	return val
+}
+
+func (r *RDBClient) DeleteKey(key string) int64 {
+	val, err := r.client.Del(key).Result()
+
+	if err != nil {
+		l.Errorf("[%v] There was an error while deleting %v from redis.", err, key)
+	}
+
+	return val
+}
