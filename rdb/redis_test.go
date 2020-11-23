@@ -3,8 +3,32 @@ package rdb
 import (
 	"testing"
 
+	"github.com/emersion/go-imap"
 	"niecke-it.de/veloci-meter/config"
 )
+
+func TestStoreMail(t *testing.T) {
+	config := config.LoadConfig("../config.json")
+	r := NewRDB(&config.Redis)
+
+	msg := imap.Message{}
+	envelope := imap.Envelope{Subject: "Test", MessageId: "test"}
+	msg.Envelope = &envelope
+
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+	r.StoreMail(&msg, 60)
+}
+
+func TestCountMail(t *testing.T) {
+}
 
 func TestCalculateGlobalKey1(t *testing.T) {
 	result := calculateGlobalKey(1606044626, 5)

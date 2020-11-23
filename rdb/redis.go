@@ -1,10 +1,12 @@
 package rdb
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -43,8 +45,10 @@ func buildHash(subject string) string {
 
 func (r *RDBClient) StoreMail(msg *imap.Message, duration int) {
 	sha1_hash := buildHash(msg.Envelope.Subject)
-	r.client.Set(sha1_hash+":"+msg.Envelope.MessageId, msg.Envelope.MessageId, time.Duration(duration)*time.Second)
-	l.Debugln("Stored " + sha1_hash + ":" + msg.Envelope.MessageId + " for " + fmt.Sprint(time.Duration(duration)*time.Second))
+	// using a random int32 as part of the redis key
+	random_part, _ := rand.Int(rand.Reader, big.NewInt(2147483647))
+	r.client.Set(sha1_hash+":"+fmt.Sprint(random_part), 1, time.Duration(duration)*time.Second)
+	l.Debugln("Stored " + sha1_hash + ":" + fmt.Sprint(random_part) + " for " + fmt.Sprint(time.Duration(duration)*time.Second))
 }
 
 func (r *RDBClient) CountMail(pattern string) int64 {
@@ -68,7 +72,7 @@ func (r *RDBClient) IncreaseGlobalCounter(timeframe int) {
 	redis_key := calculateGlobalKey(timestamp, timeframe)
 	err := r.client.Incr(redis_key)
 	if err != nil {
-		l.Debug("Redis Command executed: [%v]", err, redis_key)
+		l.Debugf("[%v] Redis Command executed: [%v]", err, redis_key)
 	}
 }
 
