@@ -15,19 +15,24 @@ func TestStoreMail(t *testing.T) {
 	envelope := imap.Envelope{Subject: "Test", MessageId: "test"}
 	msg.Envelope = &envelope
 
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-	r.StoreMail(&msg, 60)
-}
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
+	r.StoreMail(&msg, 15)
 
-func TestCountMail(t *testing.T) {
+	result := r.CountMail("Test")
+	expected := int64(10)
+	if result != expected {
+		t.Errorf("TestStoreMail() test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
 }
 
 func TestCalculateGlobalKey1(t *testing.T) {
@@ -74,6 +79,29 @@ func TestGlobalCounter5m(t *testing.T) {
 	result := r.GetGlobalCounter(5)
 	expected := 5
 	if result != expected {
-		t.Errorf("GlobalCounter5m() test returned an unexpected result: got %v want %v", result, expected)
+		t.Errorf("TestGlobalCounter5m() test returned an unexpected result: got %v want %v", result, expected)
 	}
+
+	r.client.FlushDB()
+}
+
+func TestGetKeys(t *testing.T) {
+	config := config.LoadConfig("../config.json")
+	r := NewRDB(&config.Redis)
+
+	result := len(r.GetKeys("global:*"))
+	expected := 0
+	if result != expected {
+		t.Errorf("TestGetKeys() test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.IncreaseGlobalCounter(5)
+
+	result = len(r.GetKeys("global:*"))
+	expected = 1
+	if result != expected {
+		t.Errorf("TestGetKeys() test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
 }
