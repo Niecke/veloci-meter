@@ -3,10 +3,11 @@
 ## Missing Features
 
 * [ ] refactor the main.go
+* [ ] log in json
 * [ ] single check mode
 * [x] enhance logging (add debug log)
 * [x] run programm as service
-* [ ] warn if icinga checks are not defined
+* [x] warn if icinga checks are not defined
 * [ ] export icinga check configuration when starting
 
 ## Installation
