@@ -16,6 +16,7 @@ type Config struct {
 	FetchInterval int    `json:"FetchInterval"`
 	CheckInterval int    `json:"CheckInterval"`
 	LogLevel      string `json:"LogLevel"`
+	LogFormat     string `json:"LogFormat"`
 
 	Icinga Icinga `json:"Icinga"`
 	Redis  Redis  `json:"Redis"`
@@ -42,6 +43,19 @@ type Mail struct {
 	BatchSize int    `json:"BatchSize"`
 }
 
+var LogLevels = map[string]bool{
+	"FATAL":   true,
+	"ERROR":   true,
+	"WARNING": true,
+	"INFO":    true,
+	"DEBUG":   true,
+}
+
+var LogFormats = map[string]bool{
+	"PLAIN": true,
+	"JSON":  true,
+}
+
 func LoadConfig(path string) (c *Config) {
 	//##### CONFIG #####
 	var config Config
@@ -57,6 +71,17 @@ func LoadConfig(path string) (c *Config) {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'config' which we defined above
 	json.Unmarshal(byteValue, &config)
+
+	if !LogLevels[config.LogLevel] {
+		l.Errorf("Log level %v not supported. Falling back to INFO.", config.LogLevel)
+		config.LogLevel = "INFO"
+	}
+
+	if !LogFormats[config.LogFormat] {
+		l.Errorf("Log format %v not supported. Falling back to PLAIN.", config.LogFormat)
+		config.LogFormat = "PLAIN"
+	}
+
 	l.Infof("Successfully loaded the config from %v", path)
 	return &config
 }

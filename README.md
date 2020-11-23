@@ -110,3 +110,12 @@ object Service "positive rule" {
   enable_passive_checks = true
 }
 ```
+## Logging
+
+### LogLevel
+
+The LogLevel could be one of `FATAL`, `ERROR`, `WARNING`, `INFO` or `DEBUG`.
+
+### LogFormat
+
+The LogFormat could be one of `PLAIN` or `JSON`.

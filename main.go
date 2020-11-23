@@ -64,6 +64,9 @@ func (p *program) run() error {
 	level, _ := l.ParseLevel(config.LogLevel)
 	l.SetLevel(level)
 	l.SetOutput(f)
+	if config.LogFormat == "JSON" {
+		l.SetFormatter(&l.JSONFormatter{})
+	}
 
 	//##### RULES #####
 	rules := rules.LoadRules()
