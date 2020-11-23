@@ -156,7 +156,7 @@ func cleanUp() {
 	r := rdb.NewRDB(&conf.Redis)
 
 	for index, val := range GlobalPatterns {
-		l.Debug("Checking %v keys...", index)
+		l.Debugf("Checking %v keys...", index)
 		keys := r.GetKeys(val + "*")
 		for _, key := range keys {
 			ts, err := strconv.Atoi(strings.Replace(key, val, "", -1))
