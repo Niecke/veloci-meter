@@ -180,6 +180,7 @@ func main() {
 
 func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.RDBClient) {
 	l.Debug("Running main process loop...")
+	start_timestamp := int(time.Now().Unix())
 	//##### MAIL STUFF #####
 	imapClient := mail.NewIMAPClient(&config.Mail)
 
@@ -254,6 +255,8 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.RDBClient) {
 	imapClient.Logout()
 	imapClient.Terminate()
 
-	l.Infof("%v of %v messages have been processed. Next run in %v seconds", processed, len(ids), config.FetchInterval)
+	end_timestamp := int(time.Now().Unix())
+	duration := end_timestamp - start_timestamp
+	l.Infof("%v of %v messages have been processed in %d seconds. Next run in %v seconds", processed, len(ids), duration, config.FetchInterval)
 	time.Sleep(time.Duration(config.FetchInterval) * time.Second)
 }
