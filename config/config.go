@@ -10,18 +10,14 @@ import (
 )
 
 type Config struct {
-	MailURI         string `json:"MailURI"`
-	MailUser        string `json:"MailUser"`
-	MailPassword    string `json:"MailPassword"`
-	BatchSize       int    `json:"BatchSize"`
-	FetchInterval   int    `json:"FetchInterval"`
-	CheckInterval   int    `json:"CheckInterval"`
-	LogLevel        string `json:"LogLevel"`
-	LogFormat       string `json:"LogFormat"`
-	CleanUpSchedule string `json:"CleanUpSchedule"`
+	FetchInterval   int    `json:"FetchInterval,omitempty"`
+	CheckInterval   int    `json:"CheckInterval,omitempty"`
+	LogLevel        string `json:"LogLevel,omitempty"`
+	LogFormat       string `json:"LogFormat,omitempty"`
+	CleanUpSchedule string `json:"CleanUpSchedule,omitempty"`
 
 	Icinga Icinga `json:"Icinga"`
-	Redis  Redis  `json:"Redis"`
+	Redis  Redis  `json:"Redis,omitempty"`
 	Mail   Mail   `json:"Mail"`
 }
 
@@ -29,19 +25,19 @@ type Icinga struct {
 	Endpoint string `json:"Endpoint"`
 	User     string `json:"User"`
 	Password string `json:"Password"`
-	Hostname string `json:"Hostname"`
+	Hostname string `json:"Hostname,omitempty"`
 }
 
 type Redis struct {
-	URI      string `json:"URI"`
-	Password string `json:"Password"`
-	Database int    `json:"Database"`
+	URI      string `json:"URI,omitempty"`
+	Password string `json:"Password,omitempty"`
+	Database int    `json:"Database,omitempty"`
 }
 
 type Mail struct {
-	URI       string `json:"URI"`
-	User      string `json:"User"`
-	Password  string `json:"Password"`
+	URI       string `json:"URI,omitempty"`
+	User      string `json:"User,omitempty"`
+	Password  string `json:"Password,omitempty"`
 	BatchSize int    `json:"BatchSize"`
 }
 
@@ -63,7 +59,7 @@ func LoadConfig(path string) (c *Config) {
 	var config Config
 	configFile, err := os.Open(path)
 	if err != nil {
-		l.Fatal(err)
+		l.Fatalf("[%v] There was an error while opening the config file at '%v'", err, path)
 	}
 	l.Debugln("Successfully Opened config.json")
 	defer configFile.Close()
@@ -72,16 +68,53 @@ func LoadConfig(path string) (c *Config) {
 
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'config' which we defined above
-	json.Unmarshal(byteValue, &config)
+	err = json.Unmarshal(byteValue, &config)
+	if err != nil {
+		l.Fatalf("[%v] Can't parse config file %v", err, path)
+	}
 
-	if !LogLevels[config.LogLevel] {
+	CheckRequiredFields(&config)
+
+	// check for none required configs
+	if config.LogLevel == "" {
+		l.Error("LogLevel not set. Using default: INFO.")
+		config.LogLevel = "INFO"
+	} else if !LogLevels[config.LogLevel] {
 		l.Errorf("Log level %v not supported. Falling back to INFO.", config.LogLevel)
 		config.LogLevel = "INFO"
 	}
 
-	if !LogFormats[config.LogFormat] {
+	if config.LogFormat == "" {
+		l.Error("LogFormat not set. Using default: PLAIN.")
+		config.LogFormat = "PLAIN"
+	} else if !LogFormats[config.LogFormat] {
 		l.Errorf("Log format %v not supported. Falling back to PLAIN.", config.LogFormat)
 		config.LogFormat = "PLAIN"
+	}
+
+	if config.Mail.BatchSize == 0 {
+		l.Error("Mail.BatchSize not set. Using default: 5.")
+		config.Mail.BatchSize = 5
+	}
+
+	if config.FetchInterval == 0 {
+		l.Error("FetchInterval not set. Using default: 10.")
+		config.FetchInterval = 10
+	}
+
+	if config.CheckInterval == 0 {
+		l.Error("CheckInterval not set. Using default: 10.")
+		config.CheckInterval = 10
+	}
+
+	if config.Icinga.Hostname == "" {
+		l.Error("Icinga.Hostname not set. Using default: MAIL.")
+		config.Icinga.Hostname = "MAIL"
+	}
+
+	if config.Redis.URI == "" {
+		l.Error("Redis.URI not set. Using default: localhost:6379.")
+		config.Redis.URI = "localhost:6379"
 	}
 
 	p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
@@ -94,4 +127,19 @@ func LoadConfig(path string) (c *Config) {
 
 	l.Infof("Successfully loaded the config from %v", path)
 	return &config
+}
+
+func CheckRequiredFields(c *Config) {
+	CheckRequiredField(c.Mail.URI, "Mail.URI")
+	CheckRequiredField(c.Mail.User, "Mail.User")
+	CheckRequiredField(c.Mail.Password, "Mail.Password")
+	CheckRequiredField(c.Icinga.Endpoint, "Icinga.Endpoint")
+	CheckRequiredField(c.Icinga.User, "Icinga.User")
+	CheckRequiredField(c.Icinga.Password, "Icinga.Password")
+}
+
+func CheckRequiredField(key interface{}, keyName string) {
+	if key == nil || key == "" {
+		l.Fatalf("ConfigError: %v is undefined or empty", keyName)
+	}
 }
