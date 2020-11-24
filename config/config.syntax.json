@@ -1,0 +1,23 @@
+{
+    "Mail": {
+        "URI": "mail.local:993",
+        "User": "test@local",
+        "Password": "xxxxxx",
+        "BatchSize": 5
+    },
+    "FetchInterval": 10,
+    "CheckInterval": 10,
+    "LogLevel": "LIVE",
+    "LogFormat": "TEST",
+    "CleanUpSchedule": "0",
+    "Icinga": {
+        "Endpoint": "https://localhost:5665/v1/actions/process-check-result",
+        "User": "root",
+        "Password": "xxxxxxx",
+        "Hostname": "MAIL"
+    },
+    "Redis": {
+        "URI": "localhost:6379",
+        "Password": "",
+        "Database": 0
+    }

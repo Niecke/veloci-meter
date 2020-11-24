@@ -2,6 +2,8 @@ package config
 
 import (
 	"testing"
+
+	l "github.com/sirupsen/logrus"
 )
 
 func TestLoadConfigExample(t *testing.T) {
@@ -160,5 +162,41 @@ func TestLoadConfigBrokent(t *testing.T) {
 	}
 	if (conf.Redis.Database == 0) != true {
 		t.Errorf("TestLoadConfigExample() [conf.Redis.Database] test returned an unexpected result: got %v want %v", conf.Redis.Database, 0)
+	}
+}
+
+func TestLoadConfigSyntax(t *testing.T) {
+	defer func() { l.StandardLogger().ExitFunc = nil }()
+	var fatal bool
+	l.StandardLogger().ExitFunc = func(int) { fatal = true }
+
+	fatal = false
+	LoadConfig("config.syntax.json")
+	if fatal != true {
+		t.Errorf("TestLoadConfigSyntax() test returned an unexpected result: got %v want %v", fatal, true)
+	}
+}
+
+func TestLoadConfigMissing(t *testing.T) {
+	defer func() { l.StandardLogger().ExitFunc = nil }()
+	var fatal bool
+	l.StandardLogger().ExitFunc = func(int) { fatal = true }
+
+	fatal = false
+	LoadConfig("config.missing.json")
+	if fatal != true {
+		t.Errorf("TestLoadConfigSyntax() test returned an unexpected result: got %v want %v", fatal, true)
+	}
+}
+
+func TestLoadConfigIOError(t *testing.T) {
+	defer func() { l.StandardLogger().ExitFunc = nil }()
+	var fatal bool
+	l.StandardLogger().ExitFunc = func(int) { fatal = true }
+
+	fatal = false
+	LoadConfig("config")
+	if fatal != true {
+		t.Errorf("TestLoadConfigSyntax() test returned an unexpected result: got %v want %v", fatal, true)
 	}
 }
