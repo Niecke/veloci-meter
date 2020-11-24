@@ -140,7 +140,7 @@ func (r *Client) GetGlobalCounter(timeframe int) int {
 		l.WithFields(l.Fields{
 			"error":        err,
 			"redis_result": val,
-		}).Errorf("[%v] There parsing global counter value from redis. value was %v", err, val)
+		}).Errorf("[%v] There was an error while parsing global counter value from redis. value was %v", err, val)
 	}
 
 	l.WithFields(l.Fields{
