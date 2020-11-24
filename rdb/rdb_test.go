@@ -86,6 +86,19 @@ func TestGlobalCounter5m(t *testing.T) {
 	r.client.FlushDB()
 }
 
+func TestGlobalCounter5mEmpty(t *testing.T) {
+	config := config.LoadConfig("../config.json")
+	r := NewClient(&config.Redis)
+
+	result := r.GetGlobalCounter(5)
+	expected := 0
+	if result != expected {
+		t.Errorf("TestGlobalCounter5m() test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
 func TestGetKeys(t *testing.T) {
 	config := config.LoadConfig("../config.json")
 	r := NewClient(&config.Redis)
@@ -119,6 +132,19 @@ func TestDeleteKey(t *testing.T) {
 
 	result := r.DeleteKey("Test-Key")
 	expected := int64(1)
+	if result != expected {
+		t.Errorf("TestDeleteKey() test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
+func TestDeleteKeyMissing(t *testing.T) {
+	config := config.LoadConfig("../config.json")
+	r := NewClient(&config.Redis)
+
+	result := r.DeleteKey("Test-Key")
+	expected := int64(0)
 	if result != expected {
 		t.Errorf("TestDeleteKey() test returned an unexpected result: got %v want %v", result, expected)
 	}
