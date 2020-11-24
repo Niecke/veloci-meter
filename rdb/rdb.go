@@ -76,13 +76,13 @@ func (r *Client) CountMail(pattern string) int64 {
 			"error": err,
 		}).Errorf("[%v] Error while counting mails in redis.", err)
 		return int64(0)
-	} else {
-		l.WithFields(l.Fields{
-			"mail_count": v.(int64),
-			"pattern":    pattern,
-		}).Debugf("There where %v mails for pattern '%v' in redis.", v.(int64), pattern)
-		return v.(int64)
 	}
+
+	l.WithFields(l.Fields{
+		"mail_count": v.(int64),
+		"pattern":    pattern,
+	}).Debugf("There where %v mails for pattern '%v' in redis.", v.(int64), pattern)
+	return v.(int64)
 }
 
 func calculateGlobalKey(timestamp int, timeframe int) string {
@@ -131,6 +131,7 @@ func (r *Client) GetGlobalCounter(timeframe int) int {
 			"error":     err,
 			"redis_key": redisKey,
 		}).Errorf("[%v] There was an error while getting global counter from redis. Redis key was %v", err, redisKey)
+		return 0
 	}
 
 	// Parse the result from redis into int
@@ -149,6 +150,7 @@ func (r *Client) GetGlobalCounter(timeframe int) int {
 	return c
 }
 
+// GetKeys calls the redis keys command with the specified pattern and returns list of matching keys.
 func (r *Client) GetKeys(pattern string) []string {
 	val, err := r.client.Keys(pattern).Result()
 
@@ -158,15 +160,18 @@ func (r *Client) GetKeys(pattern string) []string {
 			"pattern": pattern,
 		}).Errorf("[%v] There was an error while getting keys from redis. Key pattern was %v", err, pattern)
 		return []string{}
-	} else {
-		l.WithFields(l.Fields{
-			"pattern":      pattern,
-			"redis_result": val,
-		}).Debugf("There has been %d keys for pattern '%v'", len(val), pattern)
-		return val
 	}
+
+	l.WithFields(l.Fields{
+		"pattern":      pattern,
+		"redis_result": val,
+	}).Debugf("There has been %d keys for pattern '%v'", len(val), pattern)
+	return val
+
 }
 
+// DeleteKey calls the redis del function and returns the result.
+// If there was an error zero is returned.
 func (r *Client) DeleteKey(key string) int64 {
 	val, err := r.client.Del(key).Result()
 
@@ -175,7 +180,12 @@ func (r *Client) DeleteKey(key string) int64 {
 			"error":     err,
 			"redis_key": key,
 		}).Errorf("[%v] There was an error while deleting %v from redis.", err, key)
+		return 0
 	}
 
+	l.WithFields(l.Fields{
+		"redis_key":    key,
+		"redis_result": val,
+	}).Debugf("The key %v has been deleted", key)
 	return val
 }
