@@ -2,6 +2,7 @@ package rdb
 
 import (
 	"testing"
+	"time"
 
 	"github.com/emersion/go-imap"
 	"niecke-it.de/veloci-meter/config"
@@ -101,6 +102,25 @@ func TestGetKeys(t *testing.T) {
 	expected = 1
 	if result != expected {
 		t.Errorf("TestGetKeys() test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
+func TestDeleteKey(t *testing.T) {
+	config := config.LoadConfig("../config.json")
+	r := NewRDB(&config.Redis)
+
+	_, err := r.client.Set("Test-Key", 1, time.Duration(60)*time.Second).Result()
+
+	if err != nil {
+		t.Errorf("TestDeleteKey() test produced an error while creating test key. [%v]", err)
+	}
+
+	result := r.DeleteKey("Test-Key")
+	expected := int64(1)
+	if result != expected {
+		t.Errorf("TestDeleteKey() test returned an unexpected result: got %v want %v", result, expected)
 	}
 
 	r.client.FlushDB()
