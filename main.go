@@ -87,7 +87,7 @@ func (p *program) run() error {
 	cron_job.Start()
 
 	//##### REDIS #####
-	r := rdb.NewRDB(&conf.Redis)
+	r := rdb.NewClient(&conf.Redis)
 
 	// start the background process which checks key counts in redis
 	//go background.CheckRedisLimits(config, rules)
@@ -153,7 +153,7 @@ func cleanUp() {
 	timestamp := int(time.Now().Unix())
 	deleted_key := 0
 	l.Debug("Connecting to redis...")
-	r := rdb.NewRDB(&conf.Redis)
+	r := rdb.NewClient(&conf.Redis)
 
 	for index, val := range GlobalPatterns {
 		l.Debugf("Checking %v keys...", index)

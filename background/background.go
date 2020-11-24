@@ -17,7 +17,7 @@ import (
 
 // TODO add info in case the result from icinga is empty; this is beacause of missing check definitions
 func CheckForAlerts(config *config.Config, rules *rules.Rules) {
-	r := rdb.NewRDB(&config.Redis)
+	r := rdb.NewClient(&config.Redis)
 	for {
 		critical_fired := 0
 		warning_fired := 0
