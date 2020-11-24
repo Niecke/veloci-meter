@@ -236,7 +236,7 @@ func main() {
 	}
 }
 
-func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.RDBClient) {
+func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 	l.Debug("Running main process loop...")
 	start_timestamp := int(time.Now().Unix())
 	//##### MAIL STUFF #####

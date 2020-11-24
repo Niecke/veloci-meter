@@ -10,7 +10,7 @@ import (
 
 func TestStoreMail(t *testing.T) {
 	config := config.LoadConfig("../config.json")
-	r := NewRDB(&config.Redis)
+	r := NewClient(&config.Redis)
 
 	msg := imap.Message{}
 	envelope := imap.Envelope{Subject: "Test", MessageId: "test"}
@@ -69,7 +69,7 @@ func TestCalculateGlobalKey4(t *testing.T) {
 
 func TestGlobalCounter5m(t *testing.T) {
 	config := config.LoadConfig("../config.json")
-	r := NewRDB(&config.Redis)
+	r := NewClient(&config.Redis)
 
 	r.IncreaseGlobalCounter(5)
 	r.IncreaseGlobalCounter(5)
@@ -88,7 +88,7 @@ func TestGlobalCounter5m(t *testing.T) {
 
 func TestGetKeys(t *testing.T) {
 	config := config.LoadConfig("../config.json")
-	r := NewRDB(&config.Redis)
+	r := NewClient(&config.Redis)
 
 	result := len(r.GetKeys("global:*"))
 	expected := 0
@@ -109,7 +109,7 @@ func TestGetKeys(t *testing.T) {
 
 func TestDeleteKey(t *testing.T) {
 	config := config.LoadConfig("../config.json")
-	r := NewRDB(&config.Redis)
+	r := NewClient(&config.Redis)
 
 	_, err := r.client.Set("Test-Key", 1, time.Duration(60)*time.Second).Result()
 

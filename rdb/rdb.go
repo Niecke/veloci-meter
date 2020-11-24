@@ -16,24 +16,33 @@ import (
 	"niecke-it.de/veloci-meter/config"
 )
 
-type RDBClient struct {
+// Client is the structure wrapping the redis client holding a connection to the server.
+// The redis client can be directly accessed via Client.client
+type Client struct {
 	client *redis.Client
 }
 
-func NewRDB(c *config.Redis) *RDBClient {
-	l.Debugln("Connect to redis...")
-	r := RDBClient{
+// NewClient uses the redis configuration provided to connect to a redis server and returns a pointer to the Client struct.
+// TODO add reconnect with a wait of n seconds
+func NewClient(c *config.Redis) *Client {
+	l.WithFields(l.Fields{
+		"Addr":       c.URI,
+		"MaxRetries": 3,
+		"Password":   "XXXX",
+		"DB":         c.Database,
+	}).Debug("Connect to redis...")
+	r := Client{
 		client: redis.NewClient(&redis.Options{
 			Addr:       c.URI,
 			MaxRetries: 3,
 			Password:   c.Password, // no password set
 			DB:         c.Database, // use default DB
 		})}
-	// Test redis
+	// Test the connection via ping
 	if _, err := r.client.Ping().Result(); err != nil {
 		l.Fatal(err)
 	}
-	l.Debugln("Connection successful.")
+	l.Debug("Connection successful.")
 	return &r
 }
 
@@ -43,49 +52,63 @@ func buildHash(subject string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (r *RDBClient) StoreMail(msg *imap.Message, duration int) {
-	sha1_hash := buildHash(msg.Envelope.Subject)
+// StoreMail takes the subject from the imap.Message and calculates the hash to store it in redis.
+// To count multiple mails with the same subject an aditional random int32 is added to the redis key.
+// TODO handel error while r.client.set()
+func (r *Client) StoreMail(msg *imap.Message, duration int) {
+	sha1Hash := buildHash(msg.Envelope.Subject)
 	// using a random int32 as part of the redis key
-	random_part, _ := rand.Int(rand.Reader, big.NewInt(2147483647))
-	r.client.Set(sha1_hash+":"+fmt.Sprint(random_part), 1, time.Duration(duration)*time.Second)
-	l.Debugln("Stored " + sha1_hash + ":" + fmt.Sprint(random_part) + " for " + fmt.Sprint(time.Duration(duration)*time.Second))
+	randomPart, _ := rand.Int(rand.Reader, big.NewInt(2147483647))
+	r.client.Set(sha1Hash+":"+fmt.Sprint(randomPart), 1, time.Duration(duration)*time.Second)
+	l.WithFields(l.Fields{
+		"sha1Hash":   sha1Hash,
+		"randomPart": randomPart.Text(10),
+		"duration":   time.Duration(duration) * time.Second,
+	}).Debugf("Stored %v:%v for %v", sha1Hash, randomPart.Text(10), time.Duration(duration)*time.Second)
 }
 
-func (r *RDBClient) CountMail(pattern string) int64 {
-	sha1_hash := buildHash(pattern)
-	v, err := r.client.Eval("return #redis.pcall('keys', '"+sha1_hash+":*')", nil).Result()
+// CountMail calls the redis eval function, to get all keys matching the provided pattern and then count the number of returned keys.
+func (r *Client) CountMail(pattern string) int64 {
+	sha1Hash := buildHash(pattern)
+	v, err := r.client.Eval("return #redis.pcall('keys', '"+sha1Hash+":*')", nil).Result()
 	if err != nil {
-		l.Fatal(err)
+		l.Errorf("[%v] Error while counting mails in redis.", err)
+		return int64(0)
+	} else {
+		l.WithFields(l.Fields{
+			"mail_count": v.(int64),
+			"pattern":    pattern,
+		}).Debugf("There where %v mails for pattern '%v' in redis.", v.(int64), pattern)
+		return v.(int64)
 	}
-	return v.(int64)
 }
 
 func calculateGlobalKey(timestamp int, timeframe int) string {
 	remainder := math.Mod(float64(timestamp), float64(timeframe*60))
-	key_part := timestamp - int(remainder)
-	return "global:" + fmt.Sprint(timeframe) + ":" + fmt.Sprint(key_part)
+	keyPart := timestamp - int(remainder)
+	return "global:" + fmt.Sprint(timeframe) + ":" + fmt.Sprint(keyPart)
 }
 
 // timefram in minutes
-func (r *RDBClient) IncreaseGlobalCounter(timeframe int) {
+func (r *Client) IncreaseGlobalCounter(timeframe int) {
 	timestamp := int(time.Now().Unix())
-	redis_key := calculateGlobalKey(timestamp, timeframe)
-	err := r.client.Incr(redis_key)
+	redisKey := calculateGlobalKey(timestamp, timeframe)
+	err := r.client.Incr(redisKey)
 	if err != nil {
-		l.Debugf("[%v] Redis Command executed: [%v]", err, redis_key)
+		l.Debugf("[%v] Redis Command executed: [%v]", err, redisKey)
 	}
 }
 
-func (r *RDBClient) GetGlobalCounter(timeframe int) int {
+func (r *Client) GetGlobalCounter(timeframe int) int {
 	timestamp := int(time.Now().Unix())
-	redis_key := calculateGlobalKey(timestamp, timeframe)
-	val, err := r.client.Get(redis_key).Result()
+	redisKey := calculateGlobalKey(timestamp, timeframe)
+	val, err := r.client.Get(redisKey).Result()
 
 	if err != nil {
 		if err == redis.Nil {
 			return 0
 		}
-		l.Errorf("[%v] There was an error while getting global counter from redis. Redis key was %v", err, redis_key)
+		l.Errorf("[%v] There was an error while getting global counter from redis. Redis key was %v", err, redisKey)
 	}
 
 	c, err := strconv.Atoi(val)
@@ -96,7 +119,7 @@ func (r *RDBClient) GetGlobalCounter(timeframe int) int {
 	return c
 }
 
-func (r *RDBClient) GetKeys(pattern string) []string {
+func (r *Client) GetKeys(pattern string) []string {
 	val, err := r.client.Keys(pattern).Result()
 
 	if err != nil {
@@ -106,7 +129,7 @@ func (r *RDBClient) GetKeys(pattern string) []string {
 	return val
 }
 
-func (r *RDBClient) DeleteKey(key string) int64 {
+func (r *Client) DeleteKey(key string) int64 {
 	val, err := r.client.Del(key).Result()
 
 	if err != nil {
