@@ -27,12 +27,14 @@ import (
 	"niecke-it.de/veloci-meter/mail"
 	"niecke-it.de/veloci-meter/rdb"
 	"niecke-it.de/veloci-meter/rules"
+	"niecke-it.de/veloci-meter/stats"
 )
 
 var logger service.Logger
 var confPath string
 var logPath string
 var conf config.Config
+var rulesList rules.Rules
 var cronJob cron.Cron
 
 // Program structures.
@@ -73,17 +75,20 @@ func (p *program) run() error {
 	}
 
 	//##### RULES #####
-	rules := rules.LoadRules()
+	rulesList := rules.LoadRules("/opt/veloci-meter/rules.json")
 
-	l.Infof(fmt.Sprint(len(rules.Rules)) + " rules loaded.")
-	for i := 0; i < len(rules.Rules); i++ {
-		l.Debugf("Rule " + fmt.Sprint(i) + ": " + rules.Rules[i].ToString())
+	l.Infof(fmt.Sprint(len(rulesList.Rules)) + " rules loaded.")
+	for i := 0; i < len(rulesList.Rules); i++ {
+		l.Debugf("Rule " + fmt.Sprint(i) + ": " + rulesList.Rules[i].ToString())
 	}
 
 	//##### CRON #####
 	cronJob = *cron.New()
 	cronJob.AddFunc(conf.CleanUpSchedule, cleanUp)
-	l.Infof("Cron cleanup job started with '%v' schedule.", conf.CleanUpSchedule)
+	l.Infof("Cron job [%v] started with '%v' schedule.", "cleanUp", conf.CleanUpSchedule)
+	exportJobSchedule := "0 3 * * *"
+	cronJob.AddFunc(exportJobSchedule, wrapExportJob)
+	l.Infof("Cron job [%v] started with '%v' schedule.", "wrapExportJob", exportJobSchedule)
 	cronJob.Start()
 
 	//##### REDIS #####
@@ -91,7 +96,7 @@ func (p *program) run() error {
 
 	// start the background process which checks key counts in redis
 	//go background.CheckRedisLimits(config, rules)
-	go background.CheckForAlerts(&conf, rules)
+	go background.CheckForAlerts(&conf, rulesList)
 
 	//##### MAIL STUFF #####
 	l.Infof("Check that mailboxes are setup...")
@@ -121,7 +126,7 @@ func (p *program) run() error {
 	}
 
 	for {
-		fetchMails(&conf, rules, r)
+		fetchMails(&conf, rulesList, r)
 	}
 }
 
@@ -146,6 +151,10 @@ func waitForChannelsToClose(ch <-chan struct{}) {
 var GlobalPatterns = map[string]string{
 	"5m":  "global:5:",
 	"60m": "global:60:",
+}
+
+func wrapExportJob() {
+	stats.ExportJob(&conf, rulesList)
 }
 
 func cleanUp() {

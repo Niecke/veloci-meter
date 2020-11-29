@@ -53,6 +53,10 @@ func NewClient(c *config.Redis) *Client {
 	return &r
 }
 
+func (r *Client) Client() *redis.Client {
+	return r.client
+}
+
 func buildHash(subject string) string {
 	h := sha1.New()
 	h.Write([]byte(subject))
@@ -245,14 +249,6 @@ func (r *Client) GetStatisticCount(name string, timestamp int) Stats {
 		}).Errorf("[%v] There was an error while getting stats for name '%v'.", err, name)
 		return stats
 	}
-
-	//if err == nil {
-	//	l.WithFields(l.Fields{
-	//		"redis_key": name,
-	//		"stats":     stats,
-	//	}).Debugf("There was no data for stats counter for name '%v'. Returning zero object.", name)
-	//	return stats
-	//}
 
 	if val[0] != nil {
 		result, err := strconv.ParseInt(fmt.Sprint(val[0]), 10, 64)

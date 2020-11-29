@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	l "github.com/sirupsen/logrus"
@@ -15,6 +17,7 @@ type Config struct {
 	LogLevel        string `json:"LogLevel,omitempty"`
 	LogFormat       string `json:"LogFormat,omitempty"`
 	CleanUpSchedule string `json:"CleanUpSchedule,omitempty"`
+	StatsPath       string `json:"StatsPath,omitempty"`
 
 	Icinga Icinga `json:"Icinga"`
 	Redis  Redis  `json:"Redis,omitempty"`
@@ -76,6 +79,44 @@ func LoadConfig(path string) (c *Config) {
 	CheckRequiredFields(&config)
 
 	// check for none required configs
+	if config.StatsPath == "" {
+		l.Error("StatsPath not set. Using default: /var/log/veloci-meter/stats.")
+		config.StatsPath = "/var/log/veloci-meter/stats"
+	}
+
+	l.WithFields(l.Fields{
+		"path": path,
+	}).Debug("Testing stats file...")
+	_, err = os.Stat(config.StatsPath)
+	if os.IsNotExist(err) {
+		p := filepath.Dir(config.StatsPath)
+		err = os.MkdirAll(p, 0644)
+		if err != nil {
+			l.WithFields(l.Fields{
+				"fullpath": path,
+				"path":     p,
+				"error":    err,
+			}).Errorf("[%v] Error while opening stats file at %v", err, path)
+		}
+		file, err := os.Create(config.StatsPath)
+		if err != nil {
+			l.WithFields(l.Fields{
+				"path":  path,
+				"error": err,
+			}).Errorf("[%v] Error while opening stats file at %v", err, path)
+		}
+		defer file.Close()
+	} else {
+		currentTime := time.Now().Local()
+		err = os.Chtimes(config.StatsPath, currentTime, currentTime)
+		if err != nil {
+			l.WithFields(l.Fields{
+				"path":  path,
+				"error": err,
+			}).Errorf("[%v] Error while opening stats file at %v", err, path)
+		}
+	}
+
 	if config.LogLevel == "" {
 		l.Error("LogLevel not set. Using default: INFO.")
 		config.LogLevel = "INFO"

@@ -36,9 +36,9 @@ func (r *Rule) ToString() string {
 	return "Pattern: '" + r.Pattern + "' | Timeframe: '" + fmt.Sprint(+r.Timeframe) + "' | Ok: '" + fmt.Sprint(r.Ok) + "' | Warning: '" + fmt.Sprint(r.Warning) + "' | Critical: '" + fmt.Sprint(r.Critical) + "'"
 }
 
-func LoadRules() (r *Rules) {
+func LoadRules(path string) (r *Rules) {
 	// Open our jsonFile
-	jsonFile, err := os.Open("/opt/veloci-meter/rules.json")
+	jsonFile, err := os.Open(path)
 	if err != nil {
 		l.Fatal(err)
 	}
@@ -53,6 +53,6 @@ func LoadRules() (r *Rules) {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'rules' which we defined above
 	json.Unmarshal(byteValue, &rules)
-	l.Infoln("Successfully loaded the rules from /opt/veloci-meter/rules.json")
+	l.Infoln("Successfully loaded the rules from %v", path)
 	return &rules
 }
