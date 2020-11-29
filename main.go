@@ -30,8 +30,8 @@ import (
 )
 
 var logger service.Logger
-var conf_path string
-var log_path string
+var confPath string
+var logPath string
 var conf config.Config
 var cron_job cron.Cron
 
@@ -56,9 +56,9 @@ func (p *program) Start(s service.Service) error {
 
 func (p *program) run() error {
 	//##### CONFIG #####
-	conf = *config.LoadConfig(conf_path)
+	conf = *config.LoadConfig(confPath)
 
-	f, err := os.OpenFile(log_path,
+	f, err := os.OpenFile(logPath,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -81,10 +81,10 @@ func (p *program) run() error {
 	}
 
 	//##### CRON #####
-	cron_job = *cron.New()
-	cron_job.AddFunc(conf.CleanUpSchedule, cleanUp)
+	cronJob = *cron.New()
+	cronJob.AddFunc(conf.CleanUpSchedule, cleanUp)
 	l.Infof("Cron cleanup job started with '%v' schedule.", conf.CleanUpSchedule)
-	cron_job.Start()
+	cronJob.Start()
 
 	//##### REDIS #####
 	r := rdb.NewClient(&conf.Redis)
@@ -129,7 +129,7 @@ func (p *program) Stop(s service.Service) error {
 	// Any work in Stop should be quick, usually a few seconds at most.
 
 	l.Infof("Cron cleanup job stopping...")
-	channel := cron_job.Stop().Done()
+	channel := cronJob.Stop().Done()
 	waitForChannelsToClose(channel)
 	l.Infof("Cron cleanup job stoped!")
 
@@ -151,7 +151,7 @@ var GlobalPatterns = map[string]string{
 func cleanUp() {
 	l.Debug("Running clean up job.")
 	timestamp := int(time.Now().Unix())
-	deleted_key := 0
+	deletedKey := 0
 	l.Debug("Connecting to redis...")
 	r := rdb.NewClient(&conf.Redis)
 
@@ -165,25 +165,25 @@ func cleanUp() {
 			} else {
 				// if the key is older than 24 hours -> delete it
 				if timestamp-ts > 86400 {
-					redis_return := r.DeleteKey(key)
-					l.Infof("Redis return for deleting %v was %v", key, redis_return)
-					deleted_key++
+					redisReturn := r.DeleteKey(key)
+					l.Infof("Redis return for deleting %v was %v", key, redisReturn)
+					deletedKey++
 				}
 			}
 		}
 	}
 	end := int(time.Now().Unix())
 	duration := end - timestamp
-	l.Infof("Cleanup job is done. Deleted %v keys from redis in %v seconds.", deleted_key, duration)
+	l.Infof("Cleanup job is done. Deleted %v keys from redis in %v seconds.", deletedKey, duration)
 }
 
 func main() {
 	if len(os.Args) == 3 {
-		conf_path = os.Args[1]
-		log_path = os.Args[1]
+		confPath = os.Args[1]
+		logPath = os.Args[1]
 	} else {
-		conf_path = "/opt/veloci-meter/config.json"
-		log_path = "/var/log/veloci-meter.log"
+		confPath = "/opt/veloci-meter/config.json"
+		logPath = "/var/log/veloci-meter.log"
 	}
 
 	svcFlag := flag.String("service", "", "Control the system service.")
@@ -238,7 +238,7 @@ func main() {
 
 func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 	l.Debug("Running main process loop...")
-	start_timestamp := int(time.Now().Unix())
+	startTimestamp := int(time.Now().Unix())
 	//##### MAIL STUFF #####
 	imapClient := mail.NewIMAPClient(&config.Mail)
 
@@ -280,7 +280,7 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 
 		for msg := range messages {
 			found := false
-			processed += 1
+			processed++
 			for _, rule := range rules.Rules {
 				if contains := strings.Contains(msg.Envelope.Subject, rule.Pattern); contains == true {
 					r.StoreMail(msg, rule.Timeframe)
@@ -313,8 +313,8 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 	imapClient.Logout()
 	imapClient.Terminate()
 
-	end_timestamp := int(time.Now().Unix())
-	duration := end_timestamp - start_timestamp
+	endTimestamp := int(time.Now().Unix())
+	duration := endTimestamp - startTimestamp
 	l.Infof("%v of %v messages have been processed in %d seconds. Next run in %v seconds", processed, len(ids), duration, config.FetchInterval)
 	time.Sleep(time.Duration(config.FetchInterval) * time.Second)
 }
