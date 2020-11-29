@@ -71,16 +71,44 @@ func TestGlobalCounter5m(t *testing.T) {
 	config := config.LoadConfig("../config.json")
 	r := NewClient(&config.Redis)
 
+	result := r.GetGlobalCounter(5)
+	expected := 0
+	if result != expected {
+		t.Errorf("TestGlobalCounter5m() [1] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
 	r.IncreaseGlobalCounter(5)
 	r.IncreaseGlobalCounter(5)
 	r.IncreaseGlobalCounter(5)
 	r.IncreaseGlobalCounter(5)
 	r.IncreaseGlobalCounter(5)
 
-	result := r.GetGlobalCounter(5)
-	expected := 5
+	result = r.GetGlobalCounter(5)
+	expected = 5
 	if result != expected {
-		t.Errorf("TestGlobalCounter5m() test returned an unexpected result: got %v want %v", result, expected)
+		t.Errorf("TestGlobalCounter5m() [2] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
+func TestGetGlobalCounterParseError(t *testing.T) {
+	config := config.LoadConfig("../config.json")
+	r := NewClient(&config.Redis)
+
+	timeframe := 5
+	timestamp := int(time.Now().Unix())
+	redisKey := calculateGlobalKey(timestamp, timeframe)
+	_, err := r.client.Set(redisKey, "t", time.Duration(0)).Result()
+
+	if err != nil {
+		t.Errorf("TestGetGlobalCounterParseError() test returned an unexpected result: [%v]", err)
+	}
+
+	result := r.GetGlobalCounter(5)
+	expected := 0
+	if result != expected {
+		t.Errorf("TestGetGlobalCounterParseError() test returned an unexpected result: got %v want %v", result, expected)
 	}
 
 	r.client.FlushDB()
