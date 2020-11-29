@@ -79,7 +79,7 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		// check global counter 60 minutes
 		c60 := r.GetGlobalCounter(60)
 		// counter is above the defined limit => send icinga warning
-		if c5 > rules.Global.FiveMinutes {
+		if c60 > rules.Global.SixtyMinutes {
 			icinga.SendResults(config, "Global 60m", "Global 60m", 1, int64(c60))
 			l.Debugln("Global Rule 60m is WARNING")
 		} else {
