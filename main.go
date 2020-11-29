@@ -284,6 +284,7 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 			for _, rule := range rules.Rules {
 				if contains := strings.Contains(msg.Envelope.Subject, rule.Pattern); contains == true {
 					r.StoreMail(msg, rule.Timeframe)
+					r.IncreaseStatisticCountMail(rule.Name)
 					known.AddNum(msg.SeqNum)
 					found = true
 					break
@@ -293,9 +294,11 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 				l.Debugln("Subject '" + msg.Envelope.Subject + "' does not match any pattern.")
 				// increment the gloabl counters for unkown mails
 				r.IncreaseGlobalCounter(5)
+				r.IncreaseStatisticCountMail("Global 5m")
 				l.Debugf("Increment gloabl counter %v minutes by 1.", 5)
 
 				r.IncreaseGlobalCounter(60)
+				r.IncreaseStatisticCountMail("Global 60m")
 				l.Debugf("Increment gloabl counter %v minutes by 1.", 60)
 				unknown.AddNum(msg.SeqNum)
 			}

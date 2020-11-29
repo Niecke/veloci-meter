@@ -1,6 +1,8 @@
 package rdb
 
 import (
+	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -175,6 +177,204 @@ func TestDeleteKeyMissing(t *testing.T) {
 	expected := int64(0)
 	if result != expected {
 		t.Errorf("TestDeleteKey() test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
+func TestStatisticCountMail(t *testing.T) {
+	ts := int(time.Now().Unix())
+	config := config.LoadConfig("../config.json")
+	r := NewClient(&config.Redis)
+
+	result := r.GetStatisticCount("TEST-Rule-Name", ts).Mail
+	expected := int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [1] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Warning
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [2] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Critical
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [3] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.IncreaseStatisticCountMail("TEST-Rule-Name")
+	expected = int64(1)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [4] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.IncreaseStatisticCountMail("TEST-Rule-Name")
+	expected = int64(2)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [5] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Mail
+	expected = int64(2)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [6] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Warning
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [7] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Critical
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountMail() [8] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
+func TestStatisticCountWarning(t *testing.T) {
+	ts := int(time.Now().Unix())
+	config := config.LoadConfig("../config.json")
+	r := NewClient(&config.Redis)
+
+	result := r.GetStatisticCount("TEST-Rule-Name", ts).Mail
+	expected := int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [1] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Warning
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [2] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Critical
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [3] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.IncreaseStatisticCountWarning("TEST-Rule-Name")
+	expected = int64(1)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [4] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.IncreaseStatisticCountWarning("TEST-Rule-Name")
+	expected = int64(2)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [5] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Warning
+	expected = int64(2)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [6] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Mail
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [7] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Critical
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountWarning() [8] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
+func TestStatisticCountCritical(t *testing.T) {
+	ts := int(time.Now().Unix())
+	config := config.LoadConfig("../config.json")
+	r := NewClient(&config.Redis)
+
+	result := r.GetStatisticCount("TEST-Rule-Name", ts).Mail
+	expected := int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [1] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Warning
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [2] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Critical
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [3] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.IncreaseStatisticCountCritical("TEST-Rule-Name")
+	expected = int64(1)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [4] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.IncreaseStatisticCountCritical("TEST-Rule-Name")
+	expected = int64(2)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [5] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Critical
+	expected = int64(2)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [6] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Mail
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [7] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TEST-Rule-Name", ts).Warning
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountCritical() [8] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	r.client.FlushDB()
+}
+
+func TestStatisticCountParseError(t *testing.T) {
+	ts := int(time.Now().Unix())
+	timestampDay := ts - int(math.Mod(float64(ts), float64(24*60*60)))
+	config := config.LoadConfig("../config.json")
+	r := NewClient(&config.Redis)
+	r.client.HSet("stats:TestHash:"+fmt.Sprint(timestampDay), "mail", "t")
+	r.client.HSet("stats:TestHash:"+fmt.Sprint(timestampDay), "warning", "t")
+	r.client.HSet("stats:TestHash:"+fmt.Sprint(timestampDay), "critical", "t")
+
+	result := r.GetStatisticCount("TestHash", ts).Mail
+	expected := int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountParseError() [1] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TestHash", ts).Warning
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountParseError() [2] test returned an unexpected result: got %v want %v", result, expected)
+	}
+
+	result = r.GetStatisticCount("TestHash", ts).Critical
+	expected = int64(0)
+	if result != expected {
+		t.Errorf("TestStatisticCountParseError() [3] test returned an unexpected result: got %v want %v", result, expected)
 	}
 
 	r.client.FlushDB()

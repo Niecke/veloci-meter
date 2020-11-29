@@ -31,10 +31,12 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 					if rule.Alert == "critical" {
 						//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
 						icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
+						r.IncreaseStatisticCountCritical(rule.Name)
 						critical_fired += 1
 					} else {
 						//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
 						icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
+						r.IncreaseStatisticCountWarning(rule.Name)
 						warning_fired += 1
 					}
 				} else {
@@ -48,11 +50,13 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 				if actCount > rule.Critical {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
+					r.IncreaseStatisticCountCritical(rule.Name)
 					l.Debugln("Rule " + fmt.Sprint(i) + " is CRITICAL: " + rules.Rules[i].ToString())
 					critical_fired += 1
 				} else if actCount > rule.Warning {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
+					r.IncreaseStatisticCountWarning(rule.Name)
 					l.Debugln("Rule " + fmt.Sprint(i) + " is WARNING: " + rules.Rules[i].ToString())
 					warning_fired += 1
 				} else {
@@ -69,6 +73,7 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		// counter is above the defined limit => send icinga warning
 		if c5 > rules.Global.FiveMinutes {
 			icinga.SendResults(config, "Global 5m", "Global 5m", 1, int64(c5))
+			r.IncreaseStatisticCountWarning("Global 5m")
 			l.Debugln("Global Rule 5m is WARNING")
 		} else {
 			icinga.SendResults(config, "Global 5m", "Global 5m", 0, int64(c5))
@@ -81,6 +86,7 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		// counter is above the defined limit => send icinga warning
 		if c60 > rules.Global.SixtyMinutes {
 			icinga.SendResults(config, "Global 60m", "Global 60m", 1, int64(c60))
+			r.IncreaseStatisticCountWarning("Global 60m")
 			l.Debugln("Global Rule 60m is WARNING")
 		} else {
 			icinga.SendResults(config, "Global 60m", "Global 60m", 0, int64(c60))

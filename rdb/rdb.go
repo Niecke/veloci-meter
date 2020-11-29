@@ -22,6 +22,13 @@ type Client struct {
 	client *redis.Client
 }
 
+type Stats struct {
+	Name     string
+	Mail     int64
+	Warning  int64
+	Critical int64
+}
+
 // NewClient uses the redis configuration provided to connect to a redis server and returns a pointer to the Client struct.
 // TODO add reconnect with a wait of n seconds
 func NewClient(c *config.Redis) *Client {
@@ -188,4 +195,118 @@ func (r *Client) DeleteKey(key string) int64 {
 		"redis_result": val,
 	}).Debugf("The key %v has been deleted", key)
 	return val
+}
+
+func (r *Client) increaseStatisticCount(name string, t string) int64 {
+	ts := int(time.Now().Unix())
+	timestampDay := ts - int(math.Mod(float64(ts), float64(24*60*60)))
+	val, err := r.client.HIncrBy("stats:"+name+":"+fmt.Sprint(timestampDay), t, int64(1)).Result()
+
+	if err != nil {
+		l.WithFields(l.Fields{
+			"error":     err,
+			"redis_key": name,
+		}).Errorf("[%v] There was an error while increasing stats [%v] for name '%v'.", err, t, name)
+		return int64(0)
+	}
+
+	l.WithFields(l.Fields{
+		"redis_key":    name,
+		"redis_result": val,
+	}).Debugf("Stats counter [%v] for name '%v' is now at %v", t, name, val)
+	return val
+}
+
+// IncreaseStatisticCountMail is used to count mails per name without epiring the count.
+// This is used to check if a rules has any hits.
+func (r *Client) IncreaseStatisticCountMail(name string) int64 {
+	return r.increaseStatisticCount(name, "mail")
+}
+
+func (r *Client) IncreaseStatisticCountWarning(name string) int64 {
+	return r.increaseStatisticCount(name, "warning")
+}
+
+func (r *Client) IncreaseStatisticCountCritical(name string) int64 {
+	return r.increaseStatisticCount(name, "critical")
+}
+
+// GetStatisticCount returns the actual number of hits for one name.
+func (r *Client) GetStatisticCount(name string, timestamp int) Stats {
+	stats := Stats{Name: name, Mail: 0, Warning: 0, Critical: 0}
+	timestampDay := timestamp - int(math.Mod(float64(timestamp), float64(24*60*60)))
+	val, err := r.client.HMGet("stats:"+name+":"+fmt.Sprint(timestampDay), "mail", "warning", "critical").Result()
+
+	if err != nil {
+		l.WithFields(l.Fields{
+			"error":     err,
+			"redis_key": name,
+			"stats":     stats,
+		}).Errorf("[%v] There was an error while getting stats for name '%v'.", err, name)
+		return stats
+	}
+
+	//if err == nil {
+	//	l.WithFields(l.Fields{
+	//		"redis_key": name,
+	//		"stats":     stats,
+	//	}).Debugf("There was no data for stats counter for name '%v'. Returning zero object.", name)
+	//	return stats
+	//}
+
+	if val[0] != nil {
+		result, err := strconv.ParseInt(fmt.Sprint(val[0]), 10, 64)
+		if err != nil {
+			l.WithFields(l.Fields{
+				"error":        err,
+				"stats_type":   "mail",
+				"redis_result": val,
+				"stats":        stats,
+			}).Errorf("[%v] There was an error while parsing stats counter value [%v] for name '%v' from redis. value was %v", err, "mail", name, val[0])
+		} else {
+			stats.Mail = result
+		}
+	} else {
+		stats.Mail = 0
+	}
+
+	if val[1] != nil {
+		result, err := strconv.ParseInt(fmt.Sprint(val[1]), 10, 64)
+		if err != nil {
+			l.WithFields(l.Fields{
+				"error":        err,
+				"stats_type":   "warning",
+				"redis_result": val,
+				"stats":        stats,
+			}).Errorf("[%v] There was an error while parsing stats counter value [%v] for name '%v' from redis. value was %v", err, "warning", name, val[1])
+		} else {
+			stats.Warning = result
+		}
+	} else {
+		stats.Warning = 0
+	}
+
+	if val[2] != nil {
+		result, err := strconv.ParseInt(fmt.Sprint(val[2]), 10, 64)
+		if err != nil {
+			l.WithFields(l.Fields{
+				"error":        err,
+				"stats_type":   "critical",
+				"redis_result": val,
+				"stats":        stats,
+			}).Errorf("[%v] There was an error while parsing stats counter value [%v] for name '%v' from redis. value was %v", err, "critical", name, val[2])
+		} else {
+			stats.Critical = result
+		}
+	} else {
+		stats.Critical = 0
+	}
+
+	l.WithFields(l.Fields{
+		"redis_key":    name,
+		"redis_result": val,
+		"stats":        stats,
+	}).Debugf("The stats counter for name '%v' is at %v", name, stats)
+
+	return stats
 }
