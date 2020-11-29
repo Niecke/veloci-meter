@@ -12,12 +12,13 @@ import (
 )
 
 type Config struct {
-	FetchInterval   int    `json:"FetchInterval,omitempty"`
-	CheckInterval   int    `json:"CheckInterval,omitempty"`
-	LogLevel        string `json:"LogLevel,omitempty"`
-	LogFormat       string `json:"LogFormat,omitempty"`
-	CleanUpSchedule string `json:"CleanUpSchedule,omitempty"`
-	StatsPath       string `json:"StatsPath,omitempty"`
+	FetchInterval      int    `json:"FetchInterval,omitempty"`
+	CheckInterval      int    `json:"CheckInterval,omitempty"`
+	LogLevel           string `json:"LogLevel,omitempty"`
+	LogFormat          string `json:"LogFormat,omitempty"`
+	CleanUpSchedule    string `json:"CleanUpSchedule,omitempty"`
+	StatsPath          string `json:"StatsPath,omitempty"`
+	InsecureSkipVerify *bool  `json:"InsecureSkipVerify,omitempty"`
 
 	Icinga Icinga `json:"Icinga"`
 	Redis  Redis  `json:"Redis,omitempty"`
@@ -79,6 +80,13 @@ func LoadConfig(path string) (c *Config) {
 	CheckRequiredFields(&config)
 
 	// check for none required configs
+	if config.InsecureSkipVerify == nil {
+		f := new(bool)
+		*f = false
+		l.Debugf("InsecureSkipVerify not set. Using default: true.")
+		config.InsecureSkipVerify = f
+	}
+
 	if config.StatsPath == "" {
 		l.Error("StatsPath not set. Using default: /var/log/veloci-meter/stats.")
 		config.StatsPath = "/var/log/veloci-meter/stats"
@@ -118,7 +126,7 @@ func LoadConfig(path string) (c *Config) {
 	}
 
 	if config.LogLevel == "" {
-		l.Error("LogLevel not set. Using default: INFO.")
+		l.Debugf("LogLevel not set. Using default: INFO.")
 		config.LogLevel = "INFO"
 	} else if !LogLevels[config.LogLevel] {
 		l.Errorf("Log level %v not supported. Falling back to INFO.", config.LogLevel)
@@ -126,7 +134,7 @@ func LoadConfig(path string) (c *Config) {
 	}
 
 	if config.LogFormat == "" {
-		l.Error("LogFormat not set. Using default: PLAIN.")
+		l.Debugf("LogFormat not set. Using default: PLAIN.")
 		config.LogFormat = "PLAIN"
 	} else if !LogFormats[config.LogFormat] {
 		l.Errorf("Log format %v not supported. Falling back to PLAIN.", config.LogFormat)
@@ -134,27 +142,27 @@ func LoadConfig(path string) (c *Config) {
 	}
 
 	if config.Mail.BatchSize == 0 {
-		l.Error("Mail.BatchSize not set. Using default: 5.")
+		l.Debugf("Mail.BatchSize not set. Using default: 5.")
 		config.Mail.BatchSize = 5
 	}
 
 	if config.FetchInterval == 0 {
-		l.Error("FetchInterval not set. Using default: 10.")
+		l.Debugf("FetchInterval not set. Using default: 10.")
 		config.FetchInterval = 10
 	}
 
 	if config.CheckInterval == 0 {
-		l.Error("CheckInterval not set. Using default: 10.")
+		l.Debugf("CheckInterval not set. Using default: 10.")
 		config.CheckInterval = 10
 	}
 
 	if config.Icinga.Hostname == "" {
-		l.Error("Icinga.Hostname not set. Using default: MAIL.")
+		l.Debugf("Icinga.Hostname not set. Using default: MAIL.")
 		config.Icinga.Hostname = "MAIL"
 	}
 
 	if config.Redis.URI == "" {
-		l.Error("Redis.URI not set. Using default: localhost:6379.")
+		l.Debugf("Redis.URI not set. Using default: localhost:6379.")
 		config.Redis.URI = "localhost:6379"
 	}
 

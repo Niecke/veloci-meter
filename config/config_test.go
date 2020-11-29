@@ -9,6 +9,9 @@ import (
 func TestLoadConfigExample(t *testing.T) {
 	conf := LoadConfig("config.example.json")
 
+	if (*conf.InsecureSkipVerify == true) != true {
+		t.Errorf("TestLoadConfigExample() [conf.InsecureSkipVerify] test returned an unexpected result: got %v want %v", *conf.InsecureSkipVerify, true)
+	}
 	if (conf.Mail.URI == "mail.local:993") != true {
 		t.Errorf("TestLoadConfigExample() [] test returned an unexpected result: got %v want %v", conf.Mail.URI, "mail.local:993")
 	}
@@ -62,6 +65,9 @@ func TestLoadConfigExample(t *testing.T) {
 func TestLoadConfigMinimum(t *testing.T) {
 	conf := LoadConfig("config.minimum.json")
 
+	if (*conf.InsecureSkipVerify == false) != true {
+		t.Errorf("TestLoadConfigExample() [conf.InsecureSkipVerify] test returned an unexpected result: got %v want %v", *conf.InsecureSkipVerify, false)
+	}
 	if (conf.Mail.URI == "mail.local:993") != true {
 		t.Errorf("TestLoadConfigExample() [conf.Mail.URI] test returned an unexpected result: got %v want %v", conf.Mail.URI, "mail.local:993")
 	}

@@ -11,6 +11,7 @@
     "LogFormat": "JSON",
     "CleanUpSchedule": "0 * * * *",
     "StatsPath": "/var/log/veloci-meter/stats",
+    "InsecureSkipVerify": false,
     "Icinga": {
         "Endpoint": "https://localhost:5665/v1/actions/process-check-result",
         "User": "root",
