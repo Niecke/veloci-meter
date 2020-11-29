@@ -17,7 +17,7 @@ func SendResults(c *config.Config, name string, pattern string, exitCode int, co
 	l.Debugf("Sending results: name=%v | pattern=%v | exitCode=%v", name, pattern, exitCode)
 	// TODO move insecure ssl to config
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: *c.InsecureSkipVerify},
 	}
 	var netClient = &http.Client{
 		Timeout:   time.Second * 10,
