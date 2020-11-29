@@ -33,7 +33,7 @@ var logger service.Logger
 var confPath string
 var logPath string
 var conf config.Config
-var cron_job cron.Cron
+var cronJob cron.Cron
 
 // Program structures.
 //  Define Start and Stop methods.
