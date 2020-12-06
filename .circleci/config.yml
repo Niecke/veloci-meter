@@ -5,6 +5,10 @@ version: 2
 jobs:
   build:
     docker:
+      # Service container image
+
+      - image: redis:6.0.6-alpine
+
       # specify the version
       - image: circleci/golang:1.15
 
@@ -22,6 +26,7 @@ jobs:
       - checkout
 
       # specify any bash command here prefixed with `run: `
+      - run: dockerize -wait tcp://localhost:6379 -timeout 1m
       - run: go get -v -t -d ./...
       - run: go test -v ./...
       - run: go test -v ./... -cover -coverprofile cover.out
