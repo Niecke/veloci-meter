@@ -6,6 +6,7 @@ mail.secret
 sendmail.py
 .vscode
 reports
+coverage.html
 
 ## CONFIG FILES
 config.json

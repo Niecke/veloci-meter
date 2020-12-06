@@ -14,9 +14,10 @@ import (
 )
 
 func TestExportJobMail(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	rs := rules.LoadRules("../rules.example.json")
 	r := rdb.NewClient(&config.Redis)
+	r.Client().FlushDB()
 
 	ts := int(time.Now().Unix()) - (24 * 60 * 60)
 	timestampDay := ts - int(math.Mod(float64(ts), float64(24*60*60)))
