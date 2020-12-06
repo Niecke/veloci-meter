@@ -52,7 +52,11 @@ func LoadRules(path string) (r *Rules) {
 
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'rules' which we defined above
-	json.Unmarshal(byteValue, &rules)
+	if err := json.Unmarshal(byteValue, &rules); err != nil {
+		l.ErrorLog(err, "Unknown error while unmarshaling rules.", map[string]interface{}{
+			"data": byteValue,
+		})
+	}
 	l.InfoLog("Successfully loaded the rules from {{.path}}", map[string]interface{}{"fullpath": path})
 	return &rules
 }
