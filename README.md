@@ -4,6 +4,8 @@
 
 [![CodeFactor](https://www.codefactor.io/repository/github/niecke/veloci-meter/badge)](https://www.codefactor.io/repository/github/niecke/veloci-meter)
 
+[![Build Status](https://travis-ci.org/Niecke/veloci-meter.svg?branch=master)](https://travis-ci.org/Niecke/veloci-meter)
+
 ## Missing Features
 
 * [ ] refactor the main.go
