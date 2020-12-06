@@ -22,7 +22,7 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		warningFired := 0
 		okFired := 0
 		// iterate over all rules
-		for i, rule := range rules.Rules {
+		for _, rule := range rules.Rules {
 			actCount := r.CountMail(rule.Pattern)
 			//r.RemoveAllAlert(rule.Pattern)
 			if rule.Ok != 0 {
