@@ -26,7 +26,7 @@ jobs:
       - checkout
 
       # specify any bash command here prefixed with `run: `
-      - run: dockerize -wait tcp://localhost:6379 -timeout 1m
+      - run: sudo apt-get install redis-tools ; while ! redis-cli ping 2>/dev/null ; do sleep 1 ; done
       - run: go get -v -t -d ./...
       - run: go test -v ./...
       - run: go test -v ./... -cover -coverprofile cover.out
