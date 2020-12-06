@@ -48,7 +48,7 @@ func NewClient(c *config.Redis) *Client {
 		})}
 	// Test the connection via ping
 	if _, err := r.client.Ping().Result(); err != nil {
-		l.FatalLog(err, "Unkown error", nil)
+		l.FatalLog(err, "Unknown error", nil)
 	}
 	l.DebugLog("Connection successful.", nil)
 	return &r

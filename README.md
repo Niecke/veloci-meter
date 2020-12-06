@@ -20,7 +20,7 @@ For running the veloci-meter as a systemd service the `veloci-meter.service` nee
 ## Rules
 
 The file `rules.example.json` should be renamed to `rules.json`. 
-This file containts three example rules. 
+This file contains three example rules. 
 The first checks for mails containing the string `Service-Mail` in the mail subject. 
 If there is one or more mails of this type in the last 10 seconds, a warning will be send to icinga.
 If there are 5 or more mails in the last 10 seconds a critical alert will be send to icinga. 

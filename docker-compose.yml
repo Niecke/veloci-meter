@@ -9,7 +9,7 @@ services:
   icinga2:
     image: jordan/icinga2
     # Set your hostname to the FQDN under which your
-    # sattelites will reach this container
+    # satellites will reach this container
     hostname: icinga2
     env_file:
       - secrets_sql.env

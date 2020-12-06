@@ -68,7 +68,7 @@ func ErrorLog(err error, msg string, fields map[string]interface{}) {
 		fields = map[string]interface{}{}
 	}
 	if err == nil {
-		err = errors.New("Unkown")
+		err = errors.New("Unknown")
 	}
 	fields["error"] = err
 	formattedMessage := formatMessage(msg, fields)
@@ -81,7 +81,7 @@ func FatalLog(err error, msg string, fields map[string]interface{}) {
 		fields = map[string]interface{}{}
 	}
 	if err == nil {
-		err = errors.New("Unkown")
+		err = errors.New("Unknown")
 	}
 	fields["error"] = err
 	formattedMessage := formatMessage(msg, fields)

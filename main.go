@@ -287,14 +287,14 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 			}
 			if found == false {
 				l.DebugLog("Subject '{{.message_subject}}' does not match any pattern.", map[string]interface{}{"message_subject": msg.Envelope.Subject})
-				// increment the gloabl counters for unkown mails
+				// increment the global counters for unknown mails
 				r.IncreaseGlobalCounter(5)
 				r.IncreaseStatisticCountMail("Global 5m")
-				l.DebugLog("Increment gloabl counter 5 minutes by 1.", nil)
+				l.DebugLog("Increment global counter 5 minutes by 1.", nil)
 
 				r.IncreaseGlobalCounter(60)
 				r.IncreaseStatisticCountMail("Global 60m")
-				l.DebugLog("Increment gloabl counter 60 minutes by 1.", nil)
+				l.DebugLog("Increment global counter 60 minutes by 1.", nil)
 				unknown.AddNum(msg.SeqNum)
 			}
 		}
@@ -302,7 +302,7 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 		imapClient.MoveToTODO(unknown)
 
 		if err := <-done; err != nil {
-			l.FatalLog(err, "Unkown error!", nil)
+			l.FatalLog(err, "Unknown error!", nil)
 		}
 	} else {
 		l.DebugLog("No new messages found.", nil)
