@@ -49,7 +49,8 @@ jobs:
           command: |
             ./cc-test-reporter before-build
             go test -v ./... -cover -coverprofile /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out
-            ./cc-test-reporter after-build --exit-code $?
+            ./cc-test-reporter format-coverage --input-type gocov /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out
+            ./cc-test-reporter upload-coverage
 
       - run: go tool cover -html /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out -o /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/coverage.html
 
