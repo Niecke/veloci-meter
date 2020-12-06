@@ -26,6 +26,13 @@ jobs:
       # specify any bash command here prefixed with `run: `
       #- run: sudo apt-get install redis-tools ; while ! redis-cli ping 2>/dev/null ; do sleep 1 ; done
       - run: go get -v -t -d ./...
-      - run: go test -v ./...
-      - run: go test -v ./... -cover -coverprofile cover.out
-      - run: go tool cover -html cover.out
+      - run: go test -v ./... -cover -coverprofile /tmp/cover.out
+      - run: go tool cover -html /tmp/cover.out -o /tmp/coverage.html
+
+      - store_artifacts:
+          path: /tmp/coverage.html
+          destination: coverage.html
+
+      - store_artifacts:
+          path: /tmp/coverage.html
+          destination: coverage.html
