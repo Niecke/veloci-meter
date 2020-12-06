@@ -332,10 +332,10 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 	}
 
 	if err := imapClient.Logout(); err != nil {
-		l.ErrorLog(err, "Unkown error while logging out from imap.", nil)
+		l.ErrorLog(err, "Unknown error while logging out from imap.", nil)
 	}
 	if err := imapClient.Terminate(); err != nil {
-		l.ErrorLog(err, "Unkown error while terminating imap client.", nil)
+		l.ErrorLog(err, "Unknown error while terminating imap client.", nil)
 	}
 
 	endTimestamp := int(time.Now().Unix())
