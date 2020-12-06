@@ -1,0 +1,66 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version
+      - image: circleci/golang:1.15.6
+
+      # Service container image
+      - image: redis:6.0.6-alpine
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+
+    environment: # environment variables for the build itself
+      TEST_RESULTS: /tmp/test-results # path to where test results will be saved
+    #### TEMPLATE_NOTE: go expects specific checkout path representing url
+    #### expecting it in the form of
+    ####   /go/src/github.com/circleci/go-tool
+    ####   /go/src/bitbucket.org/circleci/go-tool
+    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    steps:
+      - checkout
+
+      # specify any bash command here prefixed with `run: `
+      #- run: sudo apt-get install redis-tools ; while ! redis-cli ping 2>/dev/null ; do sleep 1 ; done
+      - run: mkdir -p ${TEST_RESULTS} # create the test results directory
+      - run:
+          name: Setup Code Climate test-reporter
+          command: |
+            # download test reporter as a static binary
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+            chmod +x ./cc-test-reporter
+
+      - run: go get -v -t -d ./...
+
+      - run:
+          name: Run unit test for codeclimate
+          command: |
+            ./cc-test-reporter before-build
+            go test -v ./... -cover -coverprofile cover.out
+            ./cc-test-reporter format-coverage -t gocov --prefix niecke-it.de/veloci-meter/ -d cover.out
+            ./cc-test-reporter upload-coverage
+
+      - run:
+          name: Run unit tests
+          # store the results of our tests in the $TEST_RESULTS directory
+          command: |
+            PACKAGE_NAMES=$(go list ./... | circleci tests split --split-by=timings --timings-type=classname)
+            gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -- $PACKAGE_NAMES
+
+      - run: go tool cover -html /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out -o /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/coverage.html
+
+      - store_artifacts:
+          path: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out
+          destination: cover.out
+
+      - store_artifacts:
+          path: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/coverage.html
+          destination: coverage.html
+
+      - store_test_results:
+          path: /tmp/test-results

@@ -1,6 +1,8 @@
 ﻿# Veloci-Meter
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/50179aab44da85b14064/maintainability)](https://codeclimate.com/github/Niecke/veloci-meter/maintainability)
+[![CodeFactor](https://www.codefactor.io/repository/github/niecke/veloci-meter/badge)](https://www.codefactor.io/repository/github/niecke/veloci-meter)
+[![veloci-meter](https://circleci.com/gh/Niecke/veloci-meter.svg?style=svg)](https://github.com/Niecke/veloci-meter)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/niecke/veloci-meter/badge)](https://www.codefactor.io/repository/github/niecke/veloci-meter)
 
