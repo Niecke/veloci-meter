@@ -14,7 +14,7 @@ import (
 )
 
 func TestExportJobMail(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	rs := rules.LoadRules("../rules.example.json")
 	r := rdb.NewClient(&config.Redis)
 

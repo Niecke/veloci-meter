@@ -11,7 +11,7 @@ import (
 )
 
 func TestStoreMail(t *testing.T) {
-	config := config.LoadConfig("config/config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	msg := imap.Message{}
@@ -70,7 +70,7 @@ func TestCalculateGlobalKey4(t *testing.T) {
 }
 
 func TestGlobalCounter5m(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	result := r.GetGlobalCounter(5)
@@ -95,7 +95,7 @@ func TestGlobalCounter5m(t *testing.T) {
 }
 
 func TestGetGlobalCounterParseError(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	timeframe := 5
@@ -117,7 +117,7 @@ func TestGetGlobalCounterParseError(t *testing.T) {
 }
 
 func TestGlobalCounter5mEmpty(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	result := r.GetGlobalCounter(5)
@@ -130,7 +130,7 @@ func TestGlobalCounter5mEmpty(t *testing.T) {
 }
 
 func TestGetKeys(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	result := len(r.GetKeys("global:*"))
@@ -151,7 +151,7 @@ func TestGetKeys(t *testing.T) {
 }
 
 func TestDeleteKey(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	_, err := r.client.Set("Test-Key", 1, time.Duration(60)*time.Second).Result()
@@ -170,7 +170,7 @@ func TestDeleteKey(t *testing.T) {
 }
 
 func TestDeleteKeyMissing(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	result := r.DeleteKey("Test-Key")
@@ -184,7 +184,7 @@ func TestDeleteKeyMissing(t *testing.T) {
 
 func TestStatisticCountMail(t *testing.T) {
 	ts := int(time.Now().Unix())
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	result := r.GetStatisticCount("TEST-Rule-Name", ts).Mail
@@ -240,7 +240,7 @@ func TestStatisticCountMail(t *testing.T) {
 
 func TestStatisticCountWarning(t *testing.T) {
 	ts := int(time.Now().Unix())
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	result := r.GetStatisticCount("TEST-Rule-Name", ts).Mail
@@ -296,7 +296,7 @@ func TestStatisticCountWarning(t *testing.T) {
 
 func TestStatisticCountCritical(t *testing.T) {
 	ts := int(time.Now().Unix())
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 
 	result := r.GetStatisticCount("TEST-Rule-Name", ts).Mail
@@ -353,7 +353,7 @@ func TestStatisticCountCritical(t *testing.T) {
 func TestStatisticCountParseError(t *testing.T) {
 	ts := int(time.Now().Unix())
 	timestampDay := ts - int(math.Mod(float64(ts), float64(24*60*60)))
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("../config/config.example.json")
 	r := NewClient(&config.Redis)
 	r.client.HSet("stats:TestHash:"+fmt.Sprint(timestampDay), "mail", "t")
 	r.client.HSet("stats:TestHash:"+fmt.Sprint(timestampDay), "warning", "t")
