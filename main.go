@@ -158,13 +158,12 @@ func cleanUp() {
 			ts, err := strconv.Atoi(strings.Replace(key, val, "", -1))
 			if err != nil {
 				l.ErrorLog(err, "There was an error converting {{.data}} to int.", map[string]interface{}{"data": key})
-			} else {
+			} else if timestamp-ts > 86400 {
 				// if the key is older than 24 hours -> delete it
-				if timestamp-ts > 86400 {
-					redisReturn := r.DeleteKey(key)
-					l.InfoLog("Redis return for deleting {{.redis_key}} was {{.redis_result}}", map[string]interface{}{"redis_key": key, "redis_result": redisReturn})
-					deletedKey++
-				}
+
+				redisReturn := r.DeleteKey(key)
+				l.InfoLog("Redis return for deleting {{.redis_key}} was {{.redis_result}}", map[string]interface{}{"redis_key": key, "redis_result": redisReturn})
+				deletedKey++
 			}
 		}
 	}

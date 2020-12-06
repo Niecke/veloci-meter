@@ -10,13 +10,12 @@ import (
 )
 
 // SetUpLogger initializes the logrus framework and set the output to the provided path and uses information from the config.
-func SetUpLogger(path string, logLevel string, logFormat string) {
+func SetUpLogger(path, logLevel, logFormat string) {
 	f, err := os.OpenFile(path,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		ErrorLog(err, "Error while checking log file.", map[string]interface{}{"path": path})
 	}
-	//defer f.Close()
 
 	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {

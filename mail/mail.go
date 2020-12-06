@@ -39,7 +39,7 @@ func NewIMAPClient(conf *config.Mail) *IMAPClient {
 
 // MarkAsSeen marks all mails in seSeq as seen. If there are no mails in setSeq the function returns immediately.
 func (c *IMAPClient) MarkAsSeen(seqSet *imap.SeqSet) {
-	if seqSet.Empty() != true {
+	if !seqSet.Empty() {
 		item := imap.FormatFlagsOp(imap.AddFlags, true)
 		flags := []interface{}{imap.SeenFlag}
 		if err := c.Store(seqSet, item, flags, nil); err != nil {
@@ -57,7 +57,7 @@ func (c *IMAPClient) MarkAsSeen(seqSet *imap.SeqSet) {
 
 // MoveToTODO moves all mails in seSeq to TODO. If there are no mails in setSeq the function returns immediately.
 func (c *IMAPClient) MoveToTODO(seqSet *imap.SeqSet) {
-	if seqSet.Empty() != true {
+	if !seqSet.Empty() {
 		if err := c.MoveWithFallback(seqSet, "ToDo"); err != nil {
 			l.ErrorLog(err, "IMAP Message copy failed!", map[string]interface{}{
 				"seq_set": seqSet,

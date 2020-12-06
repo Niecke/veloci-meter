@@ -24,22 +24,18 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		// iterate over all rules
 		for _, rule := range rules.Rules {
 			actCount := r.CountMail(rule.Pattern)
-			//r.RemoveAllAlert(rule.Pattern)
 			if rule.Ok != 0 {
 				if actCount < rule.Ok {
 					if rule.Alert == "critical" {
-						//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
 						icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
 						r.IncreaseStatisticCountCritical(rule.Name)
 						criticalFired++
 					} else {
-						//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
 						icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
 						r.IncreaseStatisticCountWarning(rule.Name)
 						warningFired++
 					}
 				} else {
-					//r.StoreAlert(config.AlertInterval, rule.Pattern, "ok")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 0, actCount)
 					okFired++
 				}
@@ -47,7 +43,6 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 				// remove all alerts if there are any
 				// the alert will be set again in each iteration
 				if actCount > rule.Critical {
-					//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
 					r.IncreaseStatisticCountCritical(rule.Name)
 					l.DebugLog("Rule {{.rule_name}} is {{.status}}", map[string]interface{}{
@@ -56,7 +51,6 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 					})
 					criticalFired++
 				} else if actCount > rule.Warning {
-					//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
 					r.IncreaseStatisticCountWarning(rule.Name)
 					l.DebugLog("Rule {{.rule_name}} is {{.status}}", map[string]interface{}{
@@ -65,7 +59,6 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 					})
 					warningFired++
 				} else {
-					//r.StoreAlert(config.AlertInterval, rule.Pattern, "ok")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 0, actCount)
 					l.DebugLog("Rule {{.rule_name}} is {{.status}}", map[string]interface{}{
 						"rule_name": rule.Name,

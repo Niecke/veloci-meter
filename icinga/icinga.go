@@ -14,7 +14,7 @@ import (
 )
 
 // SendResults send check data to the defined icinga server and logs a warning if no check definition was found on the server.
-func SendResults(c *config.Config, name string, pattern string, exitCode int, count int64) {
+func SendResults(c *config.Config, name, pattern string, exitCode int, count int64) {
 	l.DebugLog("Sending results.", map[string]interface{}{
 		"name":      name,
 		"pattern":   pattern,
@@ -76,7 +76,7 @@ func SendResults(c *config.Config, name string, pattern string, exitCode int, co
 
 }
 
-func postForm(c *http.Client, url string, user string, password string, data []byte) (resp *http.Response, err error) {
+func postForm(c *http.Client, url, user, password string, data []byte) (resp *http.Response, err error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
