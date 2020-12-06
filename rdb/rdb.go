@@ -246,53 +246,9 @@ func (r *Client) GetStatisticCount(name string, timestamp int) Stats {
 		return stats
 	}
 
-	if val[0] != nil {
-		result, err := strconv.ParseInt(fmt.Sprint(val[0]), 10, 64)
-		if err != nil {
-			l.ErrorLog(err, "There was an error while parsing stats counter value [{{.stats_type}}] for key '{{.name}}' from redis. value was {{.redis_result}}", map[string]interface{}{
-				"stats_type":   "mail",
-				"redis_result": val[0],
-				"name":         name,
-				"stats":        stats,
-			})
-		} else {
-			stats.Mail = result
-		}
-	} else {
-		stats.Mail = 0
-	}
-
-	if val[1] != nil {
-		result, err := strconv.ParseInt(fmt.Sprint(val[1]), 10, 64)
-		if err != nil {
-			l.ErrorLog(err, "There was an error while parsing stats counter value [{{.stats_type}}] for key '{{.name}}' from redis. value was {{.redis_result}}", map[string]interface{}{
-				"stats_type":   "warning",
-				"redis_result": val[1],
-				"name":         name,
-				"stats":        stats,
-			})
-		} else {
-			stats.Warning = result
-		}
-	} else {
-		stats.Warning = 0
-	}
-
-	if val[2] != nil {
-		result, err := strconv.ParseInt(fmt.Sprint(val[2]), 10, 64)
-		if err != nil {
-			l.ErrorLog(err, "There was an error while parsing stats counter value [{{.stats_type}}] for key '{{.name}}' from redis. value was {{.redis_result}}", map[string]interface{}{
-				"stats_type":   "critical",
-				"redis_result": val[1],
-				"name":         name,
-				"stats":        stats,
-			})
-		} else {
-			stats.Critical = result
-		}
-	} else {
-		stats.Critical = 0
-	}
+	stats.Mail = checkVal(val[0], name)
+	stats.Warning = checkVal(val[1], name)
+	stats.Critical = checkVal(val[2], name)
 
 	l.DebugLog("The stats counter for name '{{.redis_key}}' is at {{.redis_result}}", map[string]interface{}{
 		"redis_key":    name,
@@ -300,4 +256,22 @@ func (r *Client) GetStatisticCount(name string, timestamp int) Stats {
 		"stats":        stats,
 	})
 	return stats
+}
+
+func checkVal(val interface{}, name string) int64 {
+	if val != nil {
+		result, err := strconv.ParseInt(fmt.Sprint(val), 10, 64)
+		if err != nil {
+			l.ErrorLog(err, "There was an error while parsing stats counter value [{{.stats_type}}] for key '{{.name}}' from redis. value was {{.redis_result}}", map[string]interface{}{
+				"stats_type":   "critical",
+				"redis_result": val,
+				"name":         name,
+			})
+		} else {
+			return result
+		}
+	} else {
+		return 0
+	}
+	return 0
 }
