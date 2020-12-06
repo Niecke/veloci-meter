@@ -9,12 +9,17 @@ import (
 	"net/http"
 	"time"
 
-	l "github.com/sirupsen/logrus"
 	"niecke-it.de/veloci-meter/config"
+	l "niecke-it.de/veloci-meter/logging"
 )
 
+// SendResults send check data to the defined icinga server and logs a warning if no check definition was found on the server.
 func SendResults(c *config.Config, name string, pattern string, exitCode int, count int64) {
-	l.Debugf("Sending results: name=%v | pattern=%v | exitCode=%v", name, pattern, exitCode)
+	l.DebugLog("Sending results.", map[string]interface{}{
+		"name":      name,
+		"pattern":   pattern,
+		"exit_code": exitCode,
+	})
 	// TODO move insecure ssl to config
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: *c.InsecureSkipVerify},
@@ -31,34 +36,47 @@ func SendResults(c *config.Config, name string, pattern string, exitCode int, co
 		e = "CRITICAL"
 	}
 	var jsonStr = []byte(fmt.Sprintf(`{"type": "Service", "filter": "host.name==\"%v\" && service.name==\"%v\"", "exit_status": %d, "plugin_output": "[%v] Pattern: '%v'", "performance_data": [ "count=%d" ]}`, c.Icinga.Hostname, name, exitCode, e, pattern, count))
-	resp, err := PostForm(netClient, c.Icinga.Endpoint, c.Icinga.User, c.Icinga.Password, jsonStr)
+	resp, err := postForm(netClient, c.Icinga.Endpoint, c.Icinga.User, c.Icinga.Password, jsonStr)
 	if err != nil {
-		l.Fatal(err)
+		l.ErrorLog(err, "There was an error sending data to icinga.", map[string]interface{}{
+			"payload": jsonStr,
+		})
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		l.Fatal(err)
+		l.ErrorLog(err, "There was an error parsing answer from icinga.", map[string]interface{}{
+			"body": resp.Body,
+		})
 	}
-	l.Debugf("%s\n", string(body))
+	l.DebugLog("Result from icinga.", map[string]interface{}{
+		"body": body,
+	})
 
 	// TODO print Warning when result is empty
 	var r map[string]interface{}
 	err = json.Unmarshal(body, &r)
 	if err != nil {
-		l.Errorf("[%v] Error while decoding icinga result. The http response body was %v", err, body)
+		l.ErrorLog(err, "Error while decoding icinga result. The http response body was {{.body}}", map[string]interface{}{
+			"body": body,
+		})
 	} else {
 		results := r["results"].([]interface{})
 		if len(results) == 0 {
-			l.Warnf("No Check definition found! Name: '%v' | Pattern: '%v'", name, pattern)
+			l.WarnLog("No Check definition found!", map[string]interface{}{
+				"name":    name,
+				"pattern": pattern,
+			})
 		} else {
-			l.Debugf("Send data for check %v", results[0])
+			l.DebugLog("Send data for check {{.check}}", map[string]interface{}{
+				"check": results[0],
+			})
 		}
 	}
 
 }
 
-func PostForm(c *http.Client, url string, user string, password string, data []byte) (resp *http.Response, err error) {
+func postForm(c *http.Client, url string, user string, password string, data []byte) (resp *http.Response, err error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
