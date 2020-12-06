@@ -10,7 +10,7 @@ jobs:
       - image: redis:6.0.6-alpine
 
       # specify the version
-      - image: circleci/golang:1.15
+      - image: circleci/golang:1.15.6
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
