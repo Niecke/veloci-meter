@@ -43,6 +43,8 @@ jobs:
             ./cc-test-reporter before-build
             go test -v ./... -cover -coverprofile cover.out
             ./cc-test-reporter after-build -t gocov
+            ./cc-test-reporter format-coverage -t gocov -d cover.out
+            ./cc-test-reporter upload-coverage
 
       - run:
           name: Run unit tests
