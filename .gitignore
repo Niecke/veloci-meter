@@ -5,6 +5,7 @@ README.html
 mail.secret
 sendmail.py
 .vscode
+reports
 
 ## CONFIG FILES
 config.json
