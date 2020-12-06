@@ -63,28 +63,26 @@ func WarnLog(msg string, fields map[string]interface{}) {
 
 // ErrorLog uses logrus to write error logs with the provided fields.
 func ErrorLog(err error, msg string, fields map[string]interface{}) {
-	if fields == nil {
-		fields = map[string]interface{}{}
-	}
-	if err == nil {
-		err = errors.New("Unknown")
-	}
-	fields["error"] = err
+	fieldsWithError(err, &fields)
 	formattedMessage := formatMessage(msg, fields)
 	logrus.WithFields(fields).Error(formattedMessage)
 }
 
 // FatalLog uses logrus to write fatal logs with the provided fields.
 func FatalLog(err error, msg string, fields map[string]interface{}) {
+	fieldsWithError(err, &fields)
+	formattedMessage := formatMessage(msg, fields)
+	logrus.WithFields(fields).Fatalf(formattedMessage)
+}
+
+func fieldsWithError(err error, fields *map[string]interface{}) {
 	if fields == nil {
-		fields = map[string]interface{}{}
+		*fields = map[string]interface{}{}
 	}
 	if err == nil {
 		err = errors.New("Unknown")
 	}
-	fields["error"] = err
-	formattedMessage := formatMessage(msg, fields)
-	logrus.WithFields(fields).Fatalf(formattedMessage)
+	(*fields)["error"] = err
 }
 
 func formatMessage(msg string, fields map[string]interface{}) string {
