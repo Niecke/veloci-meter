@@ -33,7 +33,7 @@ func SetUpLogger(path, logLevel, logFormat string) {
 
 // InfoLog uses logrus to write infos logs with the provided fields.
 func InfoLog(msg string, fields map[string]interface{}) {
-	if fields == nil {
+	if fields != nil {
 		formattedMessage := formatMessage(msg, fields)
 		logrus.WithFields(fields).Info(formattedMessage)
 	} else {
@@ -43,7 +43,7 @@ func InfoLog(msg string, fields map[string]interface{}) {
 
 // DebugLog uses logrus to write debug logs with the provided fields.
 func DebugLog(msg string, fields map[string]interface{}) {
-	if fields == nil {
+	if fields != nil {
 		formattedMessage := formatMessage(msg, fields)
 		logrus.WithFields(fields).Debug(formattedMessage)
 	} else {
@@ -53,7 +53,7 @@ func DebugLog(msg string, fields map[string]interface{}) {
 
 // WarnLog uses logrus to write warn logs with the provided fields.
 func WarnLog(msg string, fields map[string]interface{}) {
-	if fields == nil {
+	if fields != nil {
 		formattedMessage := formatMessage(msg, fields)
 		logrus.WithFields(fields).Warn(formattedMessage)
 	} else {

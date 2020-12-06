@@ -1,0 +1,13 @@
+## .travis.yml
+language: go
+
+go:
+  - "1.15"
+  - tip
+
+services:
+  - redis
+
+script:
+  - go test -v ./... -cover -coverprofile cover.out
+  - go tool cover -html cover.out

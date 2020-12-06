@@ -61,7 +61,11 @@ func (r *Client) Client() *redis.Client {
 
 func buildHash(subject string) string {
 	h := sha1.New()
-	h.Write([]byte(subject))
+	if _, err := h.Write([]byte(subject)); err != nil {
+		l.ErrorLog(err, "Unknown error while building hash.", map[string]interface{}{
+			"data": subject,
+		})
+	}
 	return hex.EncodeToString(h.Sum(nil))
 }
 

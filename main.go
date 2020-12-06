@@ -72,11 +72,33 @@ func (p *program) run() error {
 
 	//##### CRON #####
 	cronJob = *cron.New()
-	cronJob.AddFunc(conf.CleanUpSchedule, cleanUp)
-	l.InfoLog("Cron job [{{.job_name}}] started with '{{.job_schedule}}' schedule.", map[string]interface{}{"job_name": "cleanUp", "job_schedule": conf.CleanUpSchedule})
+	cronID, err := cronJob.AddFunc(conf.CleanUpSchedule, cleanUp)
+	if err != nil {
+		l.FatalLog(err, "Error while adding cronjob.", map[string]interface{}{
+			"job_name":     "cleanUp",
+			"job_schedule": conf.CleanUpSchedule,
+		})
+	} else {
+		l.InfoLog("Cron job [{{.job_name}}] started with '{{.job_schedule}}' schedule.", map[string]interface{}{
+			"job_name":     "cleanUp",
+			"job_schedule": conf.CleanUpSchedule,
+			"job_id":       cronID,
+		})
+	}
 	exportJobSchedule := "0 3 * * *"
-	cronJob.AddFunc(exportJobSchedule, wrapExportJob)
-	l.InfoLog("Cron job [{{job_name}}] started with '{{job_schedule}}' schedule.", map[string]interface{}{"job_name": "exportJob", "job_schedule": exportJobSchedule})
+	cronID, err = cronJob.AddFunc(exportJobSchedule, wrapExportJob)
+	if err != nil {
+		l.FatalLog(err, "Error while adding cronjob.", map[string]interface{}{
+			"job_name":     "exportJob",
+			"job_schedule": exportJobSchedule,
+		})
+	} else {
+		l.InfoLog("Cron job [{{job_name}}] started with '{{job_schedule}}' schedule.", map[string]interface{}{
+			"job_name":     "exportJob",
+			"job_schedule": exportJobSchedule,
+			"job_id":       cronID,
+		})
+	}
 	cronJob.Start()
 
 	//##### REDIS #####
@@ -110,7 +132,9 @@ func (p *program) run() error {
 	// check if todo mailbox exists
 	if err := imapClient.Create("ToDo"); err == nil {
 		l.InfoLog("'ToDo' Mailbox was not present and was created.", nil)
-		imapClient.Subscribe("ToDo")
+		if err := imapClient.Subscribe("ToDo"); err != nil {
+			l.ErrorLog(err, "Unknown error while subscribing ToDo IMAP-Folder", nil)
+		}
 	}
 
 	for {
@@ -307,8 +331,12 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 		l.DebugLog("No new messages found.", nil)
 	}
 
-	imapClient.Logout()
-	imapClient.Terminate()
+	if err := imapClient.Logout(); err != nil {
+		l.ErrorLog(err, "Unknown error while logging out from imap.", nil)
+	}
+	if err := imapClient.Terminate(); err != nil {
+		l.ErrorLog(err, "Unknown error while terminating imap client.", nil)
+	}
 
 	endTimestamp := int(time.Now().Unix())
 	duration := endTimestamp - startTimestamp
