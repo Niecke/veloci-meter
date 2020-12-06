@@ -11,7 +11,6 @@ ToDo
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -21,9 +20,9 @@ import (
 	"github.com/emersion/go-imap"
 	"github.com/kardianos/service"
 	"github.com/robfig/cron/v3"
-	l "github.com/sirupsen/logrus"
 	"niecke-it.de/veloci-meter/background"
 	"niecke-it.de/veloci-meter/config"
+	l "niecke-it.de/veloci-meter/logging"
 	"niecke-it.de/veloci-meter/mail"
 	"niecke-it.de/veloci-meter/rdb"
 	"niecke-it.de/veloci-meter/rules"
@@ -60,35 +59,24 @@ func (p *program) run() error {
 	//##### CONFIG #####
 	conf = *config.LoadConfig(confPath)
 
-	f, err := os.OpenFile(logPath,
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-
-	level, _ := l.ParseLevel(conf.LogLevel)
-	l.SetLevel(level)
-	l.SetOutput(f)
-	if conf.LogFormat == "JSON" {
-		l.SetFormatter(&l.JSONFormatter{})
-	}
+	//##### LOGGER #####
+	l.SetUpLogger(logPath, conf.LogLevel, conf.LogFormat)
 
 	//##### RULES #####
 	rulesList := rules.LoadRules("/opt/veloci-meter/rules.json")
 
-	l.Infof(fmt.Sprint(len(rulesList.Rules)) + " rules loaded.")
+	l.InfoLog("{{.rule_count}} rules loaded.", map[string]interface{}{"rule_count": len(rulesList.Rules)})
 	for i := 0; i < len(rulesList.Rules); i++ {
-		l.Debugf("Rule " + fmt.Sprint(i) + ": " + rulesList.Rules[i].ToString())
+		l.DebugLog("Rule {{.rule_position}}: {{.rule_content}}", map[string]interface{}{"rule_position": i, "rule_content": rulesList.Rules[i].ToString()})
 	}
 
 	//##### CRON #####
 	cronJob = *cron.New()
 	cronJob.AddFunc(conf.CleanUpSchedule, cleanUp)
-	l.Infof("Cron job [%v] started with '%v' schedule.", "cleanUp", conf.CleanUpSchedule)
+	l.InfoLog("Cron job [{{.job_name}}] started with '{{.job_schedule}}' schedule.", map[string]interface{}{"job_name": "cleanUp", "job_schedule": conf.CleanUpSchedule})
 	exportJobSchedule := "0 3 * * *"
 	cronJob.AddFunc(exportJobSchedule, wrapExportJob)
-	l.Infof("Cron job [%v] started with '%v' schedule.", "wrapExportJob", exportJobSchedule)
+	l.InfoLog("Cron job [{{job_name}}] started with '{{job_schedule}}' schedule.", map[string]interface{}{"job_name": "exportJob", "job_schedule": exportJobSchedule})
 	cronJob.Start()
 
 	//##### REDIS #####
@@ -99,13 +87,13 @@ func (p *program) run() error {
 	go background.CheckForAlerts(&conf, rulesList)
 
 	//##### MAIL STUFF #####
-	l.Infof("Check that mailboxes are setup...")
+	l.InfoLog("Check that mailboxes are setup...", nil)
 	imapClient := mail.NewIMAPClient(&conf.Mail)
 
 	// Login
-	l.Infof("Loging into mail server...")
+	l.InfoLog("Loging into mail server...", nil)
 	if err := imapClient.Login(conf.Mail.User, conf.Mail.Password); err != nil {
-		l.Fatal(err)
+		l.FatalLog(err, "Error while logging into mailbox.", map[string]interface{}{"user": conf.Mail.User})
 	}
 
 	// List mailboxes
@@ -116,12 +104,12 @@ func (p *program) run() error {
 	}()
 
 	if err := <-done; err != nil {
-		l.Fatal(err)
+		l.FatalLog(err, "Error while reading mails from the server.", map[string]interface{}{"user": conf.Mail.User})
 	}
 
 	// check if todo mailbox exists
 	if err := imapClient.Create("ToDo"); err == nil {
-		l.Infoln("'ToDo' Mailbox was not present and was created.")
+		l.InfoLog("'ToDo' Mailbox was not present and was created.", nil)
 		imapClient.Subscribe("ToDo")
 	}
 
@@ -132,20 +120,19 @@ func (p *program) run() error {
 
 func (p *program) Stop(s service.Service) error {
 	// Any work in Stop should be quick, usually a few seconds at most.
-
-	l.Infof("Cron cleanup job stopping...")
+	l.InfoLog("Cron jobs stopping...", nil)
 	channel := cronJob.Stop().Done()
 	waitForChannelsToClose(channel)
-	l.Infof("Cron cleanup job stoped!")
+	l.InfoLog("Cron jobs stopped!", nil)
 
-	l.Infof("Service stopping!")
+	l.InfoLog("Service stopping!", nil)
 	close(p.exit)
 	return nil
 }
 
 func waitForChannelsToClose(ch <-chan struct{}) {
 	t := time.Now()
-	l.Debugf("%v for Cron job to stop", time.Since(t))
+	l.DebugLog("{{.duration}} for Cron job to stop", map[string]interface{}{"duration": time.Since(t)})
 }
 
 var GlobalPatterns = map[string]string{
@@ -158,24 +145,24 @@ func wrapExportJob() {
 }
 
 func cleanUp() {
-	l.Debug("Running clean up job.")
+	l.DebugLog("Running clean up job.", nil)
 	timestamp := int(time.Now().Unix())
 	deletedKey := 0
-	l.Debug("Connecting to redis...")
+	l.DebugLog("Connecting to redis...", map[string]interface{}{"redis_uri": conf.Redis.URI})
 	r := rdb.NewClient(&conf.Redis)
 
 	for index, val := range GlobalPatterns {
-		l.Debugf("Checking %v keys...", index)
+		l.DebugLog("Checking {{.index}} keys...", map[string]interface{}{"index": index})
 		keys := r.GetKeys(val + "*")
 		for _, key := range keys {
 			ts, err := strconv.Atoi(strings.Replace(key, val, "", -1))
 			if err != nil {
-				l.Errorf("[%v] There was an error converting %v to int.", err, key)
+				l.ErrorLog(err, "There was an error converting {{.data}} to int.", map[string]interface{}{"data": key})
 			} else {
 				// if the key is older than 24 hours -> delete it
 				if timestamp-ts > 86400 {
 					redisReturn := r.DeleteKey(key)
-					l.Infof("Redis return for deleting %v was %v", key, redisReturn)
+					l.InfoLog("Redis return for deleting {{.redis_key}} was {{.redis_result}}", map[string]interface{}{"redis_key": key, "redis_result": redisReturn})
 					deletedKey++
 				}
 			}
@@ -183,7 +170,7 @@ func cleanUp() {
 	}
 	end := int(time.Now().Unix())
 	duration := end - timestamp
-	l.Infof("Cleanup job is done. Deleted %v keys from redis in %v seconds.", deletedKey, duration)
+	l.InfoLog("Cleanup job is done. Deleted {{.redis_key}} keys from redis in {{.duration}} seconds.", map[string]interface{}{"redis_key": deletedKey, "duration": duration})
 }
 
 func main() {
@@ -246,20 +233,20 @@ func main() {
 }
 
 func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
-	l.Debug("Running main process loop...")
+	l.DebugLog("Running main process loop...", nil)
 	startTimestamp := int(time.Now().Unix())
 	//##### MAIL STUFF #####
 	imapClient := mail.NewIMAPClient(&config.Mail)
 
 	// Login
 	if err := imapClient.Login(config.Mail.User, config.Mail.Password); err != nil {
-		l.Fatal(err)
+		l.FatalLog(err, "There was an error while logging into mailbox.", map[string]interface{}{"mail_user": config.Mail.User})
 	}
-	l.Debugln("Logged in")
+	l.DebugLog("Logged in", nil)
 
 	// Select INBOX
 	if _, err := imapClient.Select("INBOX", false); err != nil {
-		l.Fatal(err)
+		l.FatalLog(err, "There was an error selecting INBOX.", nil)
 	}
 
 	//##### PROCESS MAILS #####
@@ -267,7 +254,7 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 	ids := imapClient.SearchUnseen()
 	processed := 0
 	if len(ids) > 0 {
-		l.Debugln(fmt.Sprint(len(ids)) + " new messages found. Processing max " + fmt.Sprint(config.Mail.BatchSize) + " of them.")
+		l.DebugLog("{{.count}} new messages found. Processing max {{.batch_size}} of them.", map[string]interface{}{"count": len(ids), "batch_size": config.Mail.BatchSize})
 		unseenMails := new(imap.SeqSet)
 		// only get the first n mails
 		if len(ids) < config.Mail.BatchSize {
@@ -278,12 +265,11 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 
 		messages := make(chan *imap.Message, 100)
 		done := make(chan error, 1)
-		l.Debugf("%v", unseenMails)
+		l.DebugLog("Messages will be processed.", map[string]interface{}{"unseen_mails": unseenMails})
 		go func() {
 			done <- imapClient.Fetch(unseenMails, []imap.FetchItem{imap.FetchEnvelope}, messages)
 		}()
 
-		l.Debugln("There are unseen messages.")
 		unknown := new(imap.SeqSet)
 		known := new(imap.SeqSet)
 
@@ -300,15 +286,15 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 				}
 			}
 			if found == false {
-				l.Debugln("Subject '" + msg.Envelope.Subject + "' does not match any pattern.")
+				l.DebugLog("Subject '{{.message_subject}}' does not match any pattern.", map[string]interface{}{"message_subject": msg.Envelope.Subject})
 				// increment the gloabl counters for unkown mails
 				r.IncreaseGlobalCounter(5)
 				r.IncreaseStatisticCountMail("Global 5m")
-				l.Debugf("Increment gloabl counter %v minutes by 1.", 5)
+				l.DebugLog("Increment gloabl counter 5 minutes by 1.", nil)
 
 				r.IncreaseGlobalCounter(60)
 				r.IncreaseStatisticCountMail("Global 60m")
-				l.Debugf("Increment gloabl counter %v minutes by 1.", 60)
+				l.DebugLog("Increment gloabl counter 60 minutes by 1.", nil)
 				unknown.AddNum(msg.SeqNum)
 			}
 		}
@@ -316,10 +302,10 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 		imapClient.MoveToTODO(unknown)
 
 		if err := <-done; err != nil {
-			l.Fatal(err)
+			l.FatalLog(err, "Unkown error!", nil)
 		}
 	} else {
-		l.Debugln("No new messages found.")
+		l.DebugLog("No new messages found.", nil)
 	}
 
 	imapClient.Logout()
@@ -327,6 +313,6 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 
 	endTimestamp := int(time.Now().Unix())
 	duration := endTimestamp - startTimestamp
-	l.Infof("%v of %v messages have been processed in %d seconds. Next run in %v seconds", processed, len(ids), duration, config.FetchInterval)
+	l.InfoLog("{{.processed}} of {{.count}} messages have been processed in {{.duration}} seconds. Next run in {{.fetch_interval}} seconds", map[string]interface{}{"processed": processed, "count": len(ids), "duration": duration, "fetch_interval": conf.FetchInterval})
 	time.Sleep(time.Duration(config.FetchInterval) * time.Second)
 }

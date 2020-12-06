@@ -1,12 +1,11 @@
 package background
 
 import (
-	"fmt"
 	"time"
 
-	l "github.com/sirupsen/logrus"
 	"niecke-it.de/veloci-meter/config"
 	"niecke-it.de/veloci-meter/icinga"
+	l "niecke-it.de/veloci-meter/logging"
 	"niecke-it.de/veloci-meter/rdb"
 	"niecke-it.de/veloci-meter/rules"
 )
@@ -19,9 +18,9 @@ import (
 func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 	r := rdb.NewClient(&config.Redis)
 	for {
-		critical_fired := 0
-		warning_fired := 0
-		ok_fired := 0
+		criticalFired := 0
+		warningFired := 0
+		okFired := 0
 		// iterate over all rules
 		for i, rule := range rules.Rules {
 			actCount := r.CountMail(rule.Pattern)
@@ -32,17 +31,17 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 						//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
 						icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
 						r.IncreaseStatisticCountCritical(rule.Name)
-						critical_fired += 1
+						criticalFired++
 					} else {
 						//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
 						icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
 						r.IncreaseStatisticCountWarning(rule.Name)
-						warning_fired += 1
+						warningFired++
 					}
 				} else {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "ok")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 0, actCount)
-					ok_fired += 1
+					okFired++
 				}
 			} else {
 				// remove all alerts if there are any
@@ -51,19 +50,28 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "critical")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 2, actCount)
 					r.IncreaseStatisticCountCritical(rule.Name)
-					l.Debugln("Rule " + fmt.Sprint(i) + " is CRITICAL: " + rules.Rules[i].ToString())
-					critical_fired += 1
+					l.DebugLog("Rule {{.rule_name}} is {{.status}}", map[string]interface{}{
+						"rule_name": rule.Name,
+						"status":    "CRITICAL",
+					})
+					criticalFired++
 				} else if actCount > rule.Warning {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "warning")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 1, actCount)
 					r.IncreaseStatisticCountWarning(rule.Name)
-					l.Debugln("Rule " + fmt.Sprint(i) + " is WARNING: " + rules.Rules[i].ToString())
-					warning_fired += 1
+					l.DebugLog("Rule {{.rule_name}} is {{.status}}", map[string]interface{}{
+						"rule_name": rule.Name,
+						"status":    "WARNING",
+					})
+					warningFired++
 				} else {
 					//r.StoreAlert(config.AlertInterval, rule.Pattern, "ok")
 					icinga.SendResults(config, rule.Name, rule.Pattern, 0, actCount)
-					l.Debugln("Rule " + fmt.Sprint(i) + " is OK: " + rules.Rules[i].ToString())
-					ok_fired += 1
+					l.DebugLog("Rule {{.rule_name}} is {{.status}}", map[string]interface{}{
+						"rule_name": rule.Name,
+						"status":    "OK",
+					})
+					okFired++
 				}
 			}
 		}
@@ -74,12 +82,22 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		if c5 > rules.Global.FiveMinutes {
 			icinga.SendResults(config, "Global 5m", "Global 5m", 1, int64(c5))
 			r.IncreaseStatisticCountWarning("Global 5m")
-			l.Debugln("Global Rule 5m is WARNING")
+			l.DebugLog("Global Rule for {{.timeframe}} is {{.status}}", map[string]interface{}{
+				"timeframe": "5m",
+				"status":    "WARNING",
+			})
 		} else {
 			icinga.SendResults(config, "Global 5m", "Global 5m", 0, int64(c5))
-			l.Debugln("Global Rule 5m is OK")
+			l.DebugLog("Global Rule for {{.timeframe}} is {{.status}}", map[string]interface{}{
+				"timeframe": "5m",
+				"status":    "OK",
+			})
 		}
-		l.Debugf("Gloabl counter %v minutes was at %v with limit at %v.", 5, c5, rules.Global.FiveMinutes)
+		l.DebugLog("Global counter for {{.timeframe}} is at {{.count}}", map[string]interface{}{
+			"timeframe": "5m",
+			"count":     c5,
+			"limit":     rules.Global.FiveMinutes,
+		})
 
 		// check global counter 60 minutes
 		c60 := r.GetGlobalCounter(60)
@@ -87,14 +105,29 @@ func CheckForAlerts(config *config.Config, rules *rules.Rules) {
 		if c60 > rules.Global.SixtyMinutes {
 			icinga.SendResults(config, "Global 60m", "Global 60m", 1, int64(c60))
 			r.IncreaseStatisticCountWarning("Global 60m")
-			l.Debugln("Global Rule 60m is WARNING")
+			l.DebugLog("Global Rule for {{.timeframe}} is {{.status}}", map[string]interface{}{
+				"timeframe": "60m",
+				"status":    "WARNING",
+			})
 		} else {
 			icinga.SendResults(config, "Global 60m", "Global 60m", 0, int64(c60))
-			l.Debugln("Global Rule 60m is OK")
+			l.DebugLog("Global Rule for {{.timeframe}} is {{.status}}", map[string]interface{}{
+				"timeframe": "60m",
+				"status":    "OK",
+			})
 		}
-		l.Debugf("Gloabl counter %v minutes was at %v with limit at %v.", 60, c60, rules.Global.SixtyMinutes)
+		l.DebugLog("Global counter for {{.timeframe}} is at {{.count}}", map[string]interface{}{
+			"timeframe": "60m",
+			"count":     c60,
+			"limit":     rules.Global.SixtyMinutes,
+		})
 
-		l.Infof("Rule Status: OK:%v | WARNING:%v | CRITICAL:%v - Next run in %d seconds.", ok_fired, warning_fired, critical_fired, config.CheckInterval)
+		l.InfoLog("Rule Status. Next run in {{.check_interval}}", map[string]interface{}{
+			"OK":             okFired,
+			"WARNING":        warningFired,
+			"CRITICAL":       criticalFired,
+			"check_interval": config.CheckInterval,
+		})
 		time.Sleep(time.Duration(config.CheckInterval) * time.Second)
 	}
 }

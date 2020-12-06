@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	l "github.com/sirupsen/logrus"
+	l "niecke-it.de/veloci-meter/logging"
 )
 
 type Config struct {
@@ -63,18 +63,16 @@ func LoadConfig(path string) (c *Config) {
 	var config Config
 	configFile, err := os.Open(path)
 	if err != nil {
-		l.Fatalf("[%v] There was an error while opening the config file at '%v'", err, path)
+		l.FatalLog(err, "There was an error while opening the config file at '{{.path}}'", map[string]interface{}{"path": path})
 	}
-	l.Debugln("Successfully Opened config.json")
+	l.DebugLog("Successfully Opened config.json", map[string]interface{}{"path": path})
 	defer configFile.Close()
 
 	byteValue, _ := ioutil.ReadAll(configFile)
 
-	// we unmarshal our byteArray which contains our
-	// jsonFile's content into 'config' which we defined above
 	err = json.Unmarshal(byteValue, &config)
 	if err != nil {
-		l.Fatalf("[%v] Can't parse config file %v", err, path)
+		l.FatalLog(err, "Can't parse config file '{{.path}}'", map[string]interface{}{"path": path})
 	}
 
 	CheckRequiredFields(&config)
@@ -83,86 +81,74 @@ func LoadConfig(path string) (c *Config) {
 	if config.InsecureSkipVerify == nil {
 		f := new(bool)
 		*f = false
-		l.Debugf("InsecureSkipVerify not set. Using default: true.")
+		l.DebugLog("InsecureSkipVerify not set. Using default: true.", map[string]interface{}{})
 		config.InsecureSkipVerify = f
 	}
 
 	if config.StatsPath == "" {
-		l.Error("StatsPath not set. Using default: /var/log/veloci-meter/stats.")
+		l.WarnLog("StatsPath not set. Using default: /var/log/veloci-meter/stats.", map[string]interface{}{})
 		config.StatsPath = "/var/log/veloci-meter/stats"
 	}
 
-	l.WithFields(l.Fields{
-		"path": path,
-	}).Debug("Testing stats file...")
+	l.DebugLog("Testing stats file...", map[string]interface{}{"path": path})
 	_, err = os.Stat(config.StatsPath)
 	if os.IsNotExist(err) {
 		p := filepath.Dir(config.StatsPath)
 		err = os.MkdirAll(p, 0644)
 		if err != nil {
-			l.WithFields(l.Fields{
-				"fullpath": path,
-				"path":     p,
-				"error":    err,
-			}).Errorf("[%v] Error while opening stats file at %v", err, path)
+			l.ErrorLog(err, "Error while opening stats file at {{.path}}", map[string]interface{}{"path": p, "fullpath": path})
 		}
 		file, err := os.Create(config.StatsPath)
 		if err != nil {
-			l.WithFields(l.Fields{
-				"path":  path,
-				"error": err,
-			}).Errorf("[%v] Error while opening stats file at %v", err, path)
+			l.ErrorLog(err, "Error while opening stats file at {{.path}}", map[string]interface{}{"fullpath": path})
 		}
 		defer file.Close()
 	} else {
 		currentTime := time.Now().Local()
 		err = os.Chtimes(config.StatsPath, currentTime, currentTime)
 		if err != nil {
-			l.WithFields(l.Fields{
-				"path":  path,
-				"error": err,
-			}).Errorf("[%v] Error while opening stats file at %v", err, path)
+			l.ErrorLog(err, "Error while opening stats file at {{.path}}", map[string]interface{}{"fullpath": path})
 		}
 	}
 
 	if config.LogLevel == "" {
-		l.Debugf("LogLevel not set. Using default: INFO.")
+		l.DebugLog("LogLevel not set. Using default: INFO.", map[string]interface{}{})
 		config.LogLevel = "INFO"
 	} else if !LogLevels[config.LogLevel] {
-		l.Errorf("Log level %v not supported. Falling back to INFO.", config.LogLevel)
+		l.WarnLog("Log level '{{.log_level}}' not supported. Falling back to INFO.", map[string]interface{}{"log_level": config.LogLevel})
 		config.LogLevel = "INFO"
 	}
 
 	if config.LogFormat == "" {
-		l.Debugf("LogFormat not set. Using default: PLAIN.")
+		l.DebugLog("LogFormat not set. Using default: PLAIN.", map[string]interface{}{})
 		config.LogFormat = "PLAIN"
 	} else if !LogFormats[config.LogFormat] {
-		l.Errorf("Log format %v not supported. Falling back to PLAIN.", config.LogFormat)
+		l.WarnLog("Log format {{.log_format}} not supported. Falling back to PLAIN.", map[string]interface{}{"log_format": config.LogFormat})
 		config.LogFormat = "PLAIN"
 	}
 
 	if config.Mail.BatchSize == 0 {
-		l.Debugf("Mail.BatchSize not set. Using default: 5.")
+		l.DebugLog("Mail.BatchSize not set. Using default: 5.", map[string]interface{}{})
 		config.Mail.BatchSize = 5
 	}
 
 	if config.FetchInterval == 0 {
-		l.Debugf("FetchInterval not set. Using default: 10.")
+		l.DebugLog("FetchInterval not set. Using default: 10.", map[string]interface{}{})
 		config.FetchInterval = 10
 	}
 
 	if config.CheckInterval == 0 {
-		l.Debugf("CheckInterval not set. Using default: 10.")
+		l.DebugLog("CheckInterval not set. Using default: 10.", map[string]interface{}{})
 		config.CheckInterval = 10
 	}
 
 	if config.Icinga.Hostname == "" {
-		l.Debugf("Icinga.Hostname not set. Using default: MAIL.")
+		l.DebugLog("Icinga.Hostname not set. Using default: MAIL.", map[string]interface{}{})
 		config.Icinga.Hostname = "MAIL"
 	}
 
 	if config.Redis.URI == "" {
-		l.Debugf("Redis.URI not set. Using default: localhost:6379.")
+		l.DebugLog("Redis.URI not set. Using default: localhost:6379.", map[string]interface{}{})
 		config.Redis.URI = "localhost:6379"
 	}
 
@@ -170,11 +156,11 @@ func LoadConfig(path string) (c *Config) {
 	_, err = p.Parse(config.CleanUpSchedule)
 
 	if err != nil {
-		l.Errorf("[%v] Schedule '%v' for CleanUpSchedule not supported. Falling back to '0 * * * *'", err, config.CleanUpSchedule)
+		l.WarnLog("Schedule '{{.job_schedule}}' for CleanUpSchedule not supported. Falling back to '0 * * * *'", map[string]interface{}{"error": err, "job_schedule": config.CleanUpSchedule})
 		config.CleanUpSchedule = "0 * * * *"
 	}
 
-	l.Infof("Successfully loaded the config from %v", path)
+	l.InfoLog("Successfully loaded the config from {{.fullpath}}", map[string]interface{}{"fullpath": path})
 	return &config
 }
 
@@ -189,6 +175,6 @@ func CheckRequiredFields(c *Config) {
 
 func CheckRequiredField(key interface{}, keyName string) {
 	if key == nil || key == "" {
-		l.Fatalf("ConfigError: %v is undefined or empty", keyName)
+		l.FatalLog(nil, "ConfigError: %v is undefined or empty", map[string]interface{}{"key_name": keyName})
 	}
 }

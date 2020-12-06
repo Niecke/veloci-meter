@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	l "github.com/sirupsen/logrus"
+	l "niecke-it.de/veloci-meter/logging"
 )
 
 type Rules struct {
@@ -40,7 +40,7 @@ func LoadRules(path string) (r *Rules) {
 	// Open our jsonFile
 	jsonFile, err := os.Open(path)
 	if err != nil {
-		l.Fatal(err)
+		l.FatalLog(err, "Error while opening rules file at '{{.path}}'", map[string]interface{}{"path": path})
 	}
 	defer jsonFile.Close()
 
@@ -53,6 +53,6 @@ func LoadRules(path string) (r *Rules) {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'rules' which we defined above
 	json.Unmarshal(byteValue, &rules)
-	l.Infoln("Successfully loaded the rules from %v", path)
+	l.InfoLog("Successfully loaded the rules from {{.path}}", map[string]interface{}{"fullpath": path})
 	return &rules
 }

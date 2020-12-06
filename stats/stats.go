@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	l "github.com/sirupsen/logrus"
 	"niecke-it.de/veloci-meter/config"
+	l "niecke-it.de/veloci-meter/logging"
 	"niecke-it.de/veloci-meter/rdb"
 	"niecke-it.de/veloci-meter/rules"
 )
@@ -23,50 +23,40 @@ func ExportJob(conf *config.Config, rules rules.Rules) {
 	for _, rule := range rules.Rules {
 		stats := r.GetStatisticCount(rule.Name, timestamp)
 		statsList = append(statsList, stats)
-		l.WithFields(l.Fields{
+		l.DebugLog("Appended Stats to list: {{.stats_list}}", map[string]interface{}{
 			"stats_list": statsList,
-			"stats":      stats,
-		}).Debugf("Appended Stats to list: %v", statsList)
+			"stats":      stats})
 	}
 	m["stats"] = statsList
 
 	b, err := json.Marshal(m)
 	if err != nil {
-		l.WithFields(l.Fields{
-			"error":      err,
-			"stats_list": statsList,
-		}).Errorf("[%v] Error while marshaling stats to JSON", err)
+		l.ErrorLog(err, "Error while marshaling stats to JSON", map[string]interface{}{
+			"stats_list": statsList})
 	} else {
-		l.WithFields(l.Fields{
+		l.DebugLog("Stats marshaled.", map[string]interface{}{
 			"stats_list":            statsList,
-			"string_representation": b,
-		}).Debugf("Stats marshaled.")
+			"string_representation": b})
 		writeToFile("stats", string(b))
 	}
-	l.WithFields(l.Fields{
-		"timestamp": time.Unix(timestampDay, 0).Format(time.RFC3339),
-	}).Infof("Stats reported to file.")
+	l.InfoLog("Stats reported to file.", map[string]interface{}{
+		"stats_day": time.Unix(timestampDay, 0).Format(time.RFC3339)})
 }
 
 func writeToFile(path string, content string) {
 	f, err := os.OpenFile(path,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		l.WithFields(l.Fields{
-			"path":  path,
-			"error": err,
-		}).Errorf("[%v] Error while opening stats file at %v", err, path)
+		l.ErrorLog(err, "Error while opening stats file at {{.fullpath}}", map[string]interface{}{
+			"path": path})
 	}
 	defer f.Close()
 	if n, err := f.WriteString(content + "\n"); err != nil {
-		l.WithFields(l.Fields{
-			"path":  path,
-			"error": err,
-		}).Errorf("[%v] Error while writing stats to file at %v", err, path)
+		l.ErrorLog(err, "Error while writing stats to file at {{.fullpath}}", map[string]interface{}{
+			"path": path})
 	} else {
-		l.WithFields(l.Fields{
-			"path":          path,
-			"bytes_written": n,
-		}).Debugf("Data written to file.")
+		l.DebugLog("Data written to file.", map[string]interface{}{
+			"fullpath":      path,
+			"bytes_written": n})
 	}
 }
