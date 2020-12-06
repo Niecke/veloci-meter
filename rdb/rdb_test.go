@@ -11,7 +11,7 @@ import (
 )
 
 func TestStoreMail(t *testing.T) {
-	config := config.LoadConfig("../config.json")
+	config := config.LoadConfig("config/config.json")
 	r := NewClient(&config.Redis)
 
 	msg := imap.Message{}
