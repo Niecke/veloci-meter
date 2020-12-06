@@ -5,13 +5,11 @@ version: 2
 jobs:
   build:
     docker:
-      # Service container image
-
-      - image: redis:6.0.6-alpine
-
       # specify the version
       - image: circleci/golang:1.15.6
 
+      # Service container image
+      - image: redis:6.0.6-alpine
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
