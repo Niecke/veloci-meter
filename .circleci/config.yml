@@ -49,4 +49,4 @@ jobs:
           destination: coverage.html
 
       - store_test_results:
-          path: test-results
+          path: ${TEST_RESULTS}
