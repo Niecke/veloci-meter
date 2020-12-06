@@ -29,15 +29,28 @@ jobs:
       #- run: sudo apt-get install redis-tools ; while ! redis-cli ping 2>/dev/null ; do sleep 1 ; done
       - run: mkdir -p ${TEST_RESULTS} # create the test results directory
       - run:
+          name: Setup Code Climate test-reporter
+          command: |
+            # download test reporter as a static binary
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+            chmod +x ./cc-test-reporter
+
+      - run: go get -v -t -d ./...
+
+      - run:
           name: Run unit tests
           # store the results of our tests in the $TEST_RESULTS directory
           command: |
             PACKAGE_NAMES=$(go list ./... | circleci tests split --split-by=timings --timings-type=classname)
             gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -- $PACKAGE_NAMES
 
-      - run: go get -v -t -d ./...
+      - run:
+          name: Run unit test for codeclimate
+          command: |
+            ./cc-test-reporter before-build
+            go test -v ./... -cover -coverprofile /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out
+            ./cc-test-reporter after-build --exit-code $?
 
-      - run: go test -v ./... -cover -coverprofile /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out
       - run: go tool cover -html /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out -o /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/coverage.html
 
       - store_artifacts:
