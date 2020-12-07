@@ -11,6 +11,7 @@ import (
 	"niecke-it.de/veloci-meter/config"
 	"niecke-it.de/veloci-meter/rdb"
 	"niecke-it.de/veloci-meter/rules"
+	"niecke-it.de/veloci-meter/test"
 )
 
 func TestExportJobMail(t *testing.T) {
@@ -38,9 +39,7 @@ func TestExportJobMail(t *testing.T) {
 
 	result := string(content)
 	expected := fmt.Sprintf("{\"stats\":[{\"Name\":\"first rule\",\"Mail\":1,\"Warning\":0,\"Critical\":0},{\"Name\":\"another rule\",\"Mail\":1,\"Warning\":0,\"Critical\":0},{\"Name\":\"positive rule\",\"Mail\":1,\"Warning\":0,\"Critical\":0}],\"time\":\"%v\"}\n", time.Unix(int64(timestampDay), 0).Format(time.RFC3339))
-	if result != expected {
-		t.Errorf("TestExportJob() test returned an unexpected result: got %v want %v", result, expected)
-	}
+	test.CheckResult(t, result, expected)
 
 	os.Remove("stats")
 	r.Client().FlushDB()

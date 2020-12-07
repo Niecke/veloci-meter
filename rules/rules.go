@@ -9,16 +9,20 @@ import (
 	l "niecke-it.de/veloci-meter/logging"
 )
 
+// Rules contains a list of rules which can be defined in rules.json and the global rules.
 type Rules struct {
 	Global Global `json:"global"`
 	Rules  []Rule `json:"rules"`
 }
 
+// Global contains of a limit for the 5 minute and 60 minute timeframe.
 type Global struct {
 	FiveMinutes  int `json:"5"`
 	SixtyMinutes int `json:"60"`
 }
 
+// Rule contains of a Name which should be unique, a Pattern for matching mail subjects, a timeframe which defines the duration one mail will be stored in redis.
+// There could be a limit for Ok, Warning and Critical.
 type Rule struct {
 	Name      string `json:"name"`
 	Pattern   string `json:"pattern"`
@@ -29,13 +33,12 @@ type Rule struct {
 	Alert     string `json:"alert"`
 }
 
-type Ok int64
-type Alert string
-
+// ToString formats a rule as string for printing it to console.
 func (r *Rule) ToString() string {
-	return "Pattern: '" + r.Pattern + "' | Timeframe: '" + fmt.Sprint(+r.Timeframe) + "' | Ok: '" + fmt.Sprint(r.Ok) + "' | Warning: '" + fmt.Sprint(r.Warning) + "' | Critical: '" + fmt.Sprint(r.Critical) + "'"
+	return fmt.Sprintf("Name: '%v' | Pattern: '%v' | Timeframe: '%v' | Ok: '%v' | Warning: '%v' | Critical: '%v'", r.Name, r.Pattern, r.Timeframe, r.Ok, r.Warning, r.Critical)
 }
 
+// LoadRules loads all rules from a JSON file stored at path and returns a pointer to the struct where these rules are stored.
 func LoadRules(path string) (r *Rules) {
 	// Open our jsonFile
 	jsonFile, err := os.Open(path)
