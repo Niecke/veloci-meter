@@ -13,7 +13,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,9 +20,10 @@ import (
 	"github.com/kardianos/service"
 	"github.com/robfig/cron/v3"
 	"niecke-it.de/veloci-meter/background"
+	"niecke-it.de/veloci-meter/cleanup"
 	"niecke-it.de/veloci-meter/config"
 	l "niecke-it.de/veloci-meter/logging"
-	"niecke-it.de/veloci-meter/mail"
+	m "niecke-it.de/veloci-meter/mail"
 	"niecke-it.de/veloci-meter/rdb"
 	"niecke-it.de/veloci-meter/rules"
 	"niecke-it.de/veloci-meter/stats"
@@ -72,7 +72,7 @@ func (p *program) run() error {
 
 	//##### CRON #####
 	cronJob = *cron.New()
-	cronID, err := cronJob.AddFunc(conf.CleanUpSchedule, cleanUp)
+	cronID, err := cronJob.AddFunc(conf.CleanUpSchedule, wrapCleanUpJob)
 	if err != nil {
 		l.FatalLog(err, "Error while adding cronjob.", map[string]interface{}{
 			"job_name":     "cleanUp",
@@ -110,7 +110,7 @@ func (p *program) run() error {
 
 	//##### MAIL STUFF #####
 	l.InfoLog("Check that mailboxes are setup...", nil)
-	imapClient := mail.NewIMAPClient(&conf.Mail)
+	imapClient := m.NewIMAPClient(&conf.Mail)
 
 	// Login
 	l.InfoLog("Loging into mail server...", nil)
@@ -159,41 +159,12 @@ func waitForChannelsToClose(ch <-chan struct{}) {
 	l.DebugLog("{{.duration}} for Cron job to stop", map[string]interface{}{"duration": time.Since(t)})
 }
 
-var GlobalPatterns = map[string]string{
-	"5m":  "global:5:",
-	"60m": "global:60:",
-}
-
 func wrapExportJob() {
 	stats.ExportJob(&conf, rulesList)
 }
 
-func cleanUp() {
-	l.DebugLog("Running clean up job.", nil)
-	timestamp := int(time.Now().Unix())
-	deletedKey := 0
-	l.DebugLog("Connecting to redis...", map[string]interface{}{"redis_uri": conf.Redis.URI})
-	r := rdb.NewClient(&conf.Redis)
-
-	for index, val := range GlobalPatterns {
-		l.DebugLog("Checking {{.index}} keys...", map[string]interface{}{"index": index})
-		keys := r.GetKeys(val + "*")
-		for _, key := range keys {
-			ts, err := strconv.Atoi(strings.Replace(key, val, "", -1))
-			if err != nil {
-				l.ErrorLog(err, "There was an error converting {{.data}} to int.", map[string]interface{}{"data": key})
-			} else if timestamp-ts > 86400 {
-				// if the key is older than 24 hours -> delete it
-
-				redisReturn := r.DeleteKey(key)
-				l.InfoLog("Redis return for deleting {{.redis_key}} was {{.redis_result}}", map[string]interface{}{"redis_key": key, "redis_result": redisReturn})
-				deletedKey++
-			}
-		}
-	}
-	end := int(time.Now().Unix())
-	duration := end - timestamp
-	l.InfoLog("Cleanup job is done. Deleted {{.redis_key}} keys from redis in {{.duration}} seconds.", map[string]interface{}{"redis_key": deletedKey, "duration": duration})
+func wrapCleanUpJob() {
+	cleanup.CleanUp(&conf)
 }
 
 func main() {
@@ -259,7 +230,7 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 	l.DebugLog("Running main process loop...", nil)
 	startTimestamp := int(time.Now().Unix())
 	//##### MAIL STUFF #####
-	imapClient := mail.NewIMAPClient(&config.Mail)
+	imapClient := m.NewIMAPClient(&config.Mail)
 
 	// Login
 	if err := imapClient.Login(config.Mail.User, config.Mail.Password); err != nil {
