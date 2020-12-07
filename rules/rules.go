@@ -62,10 +62,49 @@ func LoadRules(path string) (r *Rules) {
 	// we unmarshal our byteArray which contains our
 	// jsonFile's content into 'rules' which we defined above
 	if err := json.Unmarshal(byteValue, &rules); err != nil {
-		l.ErrorLog(err, "Unknown error while unmarshaling rules.", map[string]interface{}{
+		l.FatalLog(err, "Unknown error while unmarshaling rules.", map[string]interface{}{
 			"data": byteValue,
 		})
 	}
+
+	for i, r := range rules.Rules {
+		checkRule(i, r)
+	}
 	l.InfoLog("Successfully loaded the rules from {{.path}}", map[string]interface{}{"fullpath": path})
 	return &rules
+}
+
+func checkRule(id int, r Rule) {
+	z := new(int64)
+	*z = 0
+	// check timeframe is greater zero
+	if r.Timeframe == 0 {
+		l.FatalLog(nil, "Timeframe can not be zero.", map[string]interface{}{
+			"rule":    r,
+			"rule_id": id,
+		})
+	}
+
+	// check any limit is defined
+	if r.Warning == 0 && r.Critical == 0 && r.Ok == 0 {
+		l.FatalLog(nil, "No warning, critical or ok limit defined.", map[string]interface{}{
+			"rule":    r,
+			"rule_id": id,
+		})
+	}
+
+	// check that warning and ok are not definde
+	if r.Warning != 0 && r.Ok != 0 {
+		l.FatalLog(nil, "Warning and Ok can not be defined for the same rule.", map[string]interface{}{
+			"rule":    r,
+			"rule_id": id,
+		})
+	}
+
+	if r.Critical != 0 && r.Ok != 0 {
+		l.FatalLog(nil, "Critical and Ok can not be defined for the same rule.", map[string]interface{}{
+			"rule":    r,
+			"rule_id": id,
+		})
+	}
 }
