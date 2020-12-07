@@ -33,6 +33,12 @@ type Rule struct {
 	Alert     string `json:"alert"`
 }
 
+// GlobalPatterns matches the redis prefixes to the different global rules.
+var GlobalPatterns = map[string]string{
+	"5m":  "global:5:",
+	"60m": "global:60:",
+}
+
 // ToString formats a rule as string for printing it to console.
 func (r *Rule) ToString() string {
 	return fmt.Sprintf("Name: '%v' | Pattern: '%v' | Timeframe: '%v' | Ok: '%v' | Warning: '%v' | Critical: '%v'", r.Name, r.Pattern, r.Timeframe, r.Ok, r.Warning, r.Critical)
