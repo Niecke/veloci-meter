@@ -53,6 +53,13 @@ jobs:
             gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -- $PACKAGE_NAMES
 
       - run: go tool cover -html /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out -o /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/coverage.html
+      
+      # build linux binary
+      - run: env GOOS=linux GOARCH=amd64 go build -o build/veloci-meter
+      
+      - store_artifacts:
+          path: build/veloci-meter
+          destination: veloci-meter
 
       - store_artifacts:
           path: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}/cover.out
