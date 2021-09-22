@@ -93,7 +93,7 @@ func (p *program) run() error {
 			"job_schedule": exportJobSchedule,
 		})
 	} else {
-		l.InfoLog("Cron job [{{job_name}}] started with '{{job_schedule}}' schedule.", map[string]interface{}{
+		l.InfoLog("Cron job [{{.job_name}}] started with '{{.job_schedule}}' schedule.", map[string]interface{}{
 			"job_name":     "exportJob",
 			"job_schedule": exportJobSchedule,
 			"job_id":       cronID,
