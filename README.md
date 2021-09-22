@@ -123,3 +123,21 @@ The LogLevel could be one of `FATAL`, `ERROR`, `WARNING`, `INFO` or `DEBUG`.
 ### LogFormat
 
 The LogFormat could be one of `PLAIN` or `JSON`.
+
+## Development
+
+```bash
+docker network create veloci_net
+
+docker run -it --network veloci_net --rm redis redis-cli -h some-redis
+
+docker run -it --network veloci_net -v ${pwd}:/data -v ${pwd}/config.json:/opt/veloci-meter/config.json -v ${pwd}/rules.example.json:/opt/veloci-meter/rules.json --rm --name veloci_meter golang:1.17.1
+
+cd /data/
+go get -v -t -d ./...
+env GOOS=linux GOARCH=amd64 go build -o build/veloci-meter
+
+./build/veloci-meter
+
+apt update && apt install -y redis
+```

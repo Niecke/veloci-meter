@@ -41,6 +41,8 @@ func SendResults(c *config.Config, name, pattern string, exitCode int, count int
 		l.ErrorLog(err, "There was an error sending data to icinga.", map[string]interface{}{
 			"payload": jsonStr,
 		})
+		// we did not get any data from icinga so we can stop here
+		return;
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

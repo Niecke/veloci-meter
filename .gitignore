@@ -1,4 +1,6 @@
 vagrant/
+/build
+.dccache
 
 TODO
 README.html

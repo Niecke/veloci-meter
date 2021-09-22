@@ -22,7 +22,8 @@ func NewIMAPClient(conf *config.Mail) *IMAPClient {
 	// Connect to server
 	c, err := client.DialTLS(conf.URI, nil)
 	if err != nil {
-		l.ErrorLog(err, "There was an error while connecting to mail server.", map[string]interface{}{
+		// TODO when no mail server is reachable we should retry; also add reconnect
+		l.FatalLog(err, "There was an error while connecting to mail server.", map[string]interface{}{
 			"server_uri": conf.URI,
 		})
 	}

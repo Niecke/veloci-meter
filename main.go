@@ -296,7 +296,7 @@ func fetchMails(config *config.Config, rules *rules.Rules, r *rdb.Client) {
 		imapClient.MoveToTODO(unknown)
 
 		if err := <-done; err != nil {
-			l.FatalLog(err, "Unknown error!", nil)
+			l.FatalLog(err, "Unknown error while processing mails!", nil)
 		}
 	} else {
 		l.DebugLog("No new messages found.", nil)
