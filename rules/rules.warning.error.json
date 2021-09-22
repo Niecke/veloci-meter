@@ -1,0 +1,15 @@
+{
+    "global": {
+        "5": 10,
+        "60": 50
+    },
+    "rules": [
+        {
+            "name": "full",
+            "pattern": "full",
+            "timeframe": 10,
+            "warning": 1,
+            "ok": 1
+        }
+    ]
+}

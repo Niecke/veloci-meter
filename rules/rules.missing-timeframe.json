@@ -1,0 +1,26 @@
+{
+    "global": {
+        "5": 10,
+        "60": 50
+    },
+    "rules": [
+        {
+            "name": "full",
+            "pattern": "full",
+            "warning": 1,
+            "critical": 5
+        },
+        {
+            "name": "critical",
+            "pattern": "critical",
+            "timeframe": 20,
+            "critical": 5
+        },
+        {
+            "name": "ok",
+            "pattern": "ok",
+            "timeframe": 3600,
+            "ok": 1
+        }
+    ]
+}
