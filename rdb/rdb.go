@@ -50,7 +50,6 @@ func NewClient(c *config.Redis) *Client {
 	if _, err := r.client.Ping().Result(); err != nil {
 		// TODO when no redis server is reachable we should retry; also add reconnect
 		l.FatalLog(err, "Unknown error while ping redis", nil)
-
 	}
 	l.DebugLog("Connection successful.", nil)
 	return &r
