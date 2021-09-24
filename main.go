@@ -116,6 +116,8 @@ func (p *program) run() error {
 	l.InfoLog("Loging into mail server...", nil)
 	if err := imapClient.Login(conf.Mail.User, conf.Mail.Password); err != nil {
 		l.FatalLog(err, "Error while logging into mailbox.", map[string]interface{}{"user": conf.Mail.User})
+	} else {
+		l.InfoLog("successfully logged into mailbox.", nil)
 	}
 
 	// List mailboxes
@@ -128,6 +130,8 @@ func (p *program) run() error {
 	if err := <-done; err != nil {
 		l.FatalLog(err, "Error while reading mails from the server.", map[string]interface{}{"user": conf.Mail.User})
 	}
+	
+	l.DebugLog("Done lisiting mailboxes", nil)
 
 	// check if todo mailbox exists
 	if err := imapClient.Create("ToDo"); err == nil {
@@ -137,6 +141,8 @@ func (p *program) run() error {
 		}
 	}
 
+	l.DebugLog("Done checking ToDo mailbox", nil)
+	
 	for {
 		fetchMails(&conf, rulesList, r)
 	}
