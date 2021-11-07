@@ -3,15 +3,15 @@ module niecke-it.de/veloci-meter
 go 1.15
 
 require (
-	github.com/emersion/go-imap v1.0.6
+	github.com/emersion/go-imap v1.2.0
 	github.com/emersion/go-imap-move v0.0.0-20190710073258-6e5a51a5b342
-	github.com/emersion/go-message v0.14.0 // indirect
 	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/kardianos/service v1.2.0
 	github.com/kr/text v0.2.0 // indirect
+	github.com/martinlindhe/base36 v1.1.0 // indirect
 	github.com/nxadm/tail v1.4.5 // indirect
 	github.com/onsi/ginkgo v1.14.2 // indirect
 	github.com/onsi/gomega v1.10.3 // indirect
