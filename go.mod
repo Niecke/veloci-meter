@@ -9,7 +9,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
-	github.com/kardianos/service v1.2.0
+	github.com/kardianos/service v1.2.2
 	github.com/kr/text v0.2.0 // indirect
 	github.com/martinlindhe/base36 v1.1.0 // indirect
 	github.com/nxadm/tail v1.4.5 // indirect
