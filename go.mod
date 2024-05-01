@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/emersion/go-imap v1.2.0
-	github.com/emersion/go-imap-move v0.0.0-20190710073258-6e5a51a5b342
+	github.com/emersion/go-imap-move v0.0.0-20210907172020-fe4558f9c872
 	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang/protobuf v1.4.3 // indirect
